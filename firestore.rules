@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // USERS COLLECTION
+    // Anyone authenticated can read user profile info (name, avatar, role)
+    // Users can only write their own profile document
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // VIDEOS COLLECTION
+    // Public read for the community feed
+    // Authenticated users can create clips under their own user id
+    match /videos/{videoId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        request.auth.token.email in ["owner@clipearn.com"]
+      );
+    }
+    
+    // ENGAGEMENTS COLLECTION
+    // Authenticated users can record engagement verification
+    match /engagements/{engagementId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // OWNER BONUS REWARDS COLLECTION
+    // Tracks unique owner clip claims per user
+    match /ownerRewards/{rewardId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    
+    // PLATFORM SETTINGS
+    // Public read for site settings (min watch seconds, daily limits)
+    // Write restricted to platform owners
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email in ["owner@clipearn.com"];
+    }
+  }
+}

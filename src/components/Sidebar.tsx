@@ -1,0 +1,143 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Compass,
+  Sparkles,
+  PlusCircle,
+  Trophy,
+  Crown,
+  User,
+  Shield,
+  Zap,
+} from "lucide-react";
+import { useApp } from "@/context/AppContext";
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { user } = useApp();
+
+  const navItems = [
+    { label: "Feed", href: "/", icon: Compass },
+    { label: "Fresh Clips", href: "/#fresh", icon: Sparkles, badge: "New" },
+    { label: "Upload Clip", href: "/post", icon: PlusCircle, highlight: true },
+    { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+    { label: "VIP Upgrade", href: "/upgrade", icon: Crown, vip: true },
+    { label: "My Profile", href: "/profile", icon: User },
+  ];
+
+  if (user?.role === "owner" || user?.role === "admin") {
+    navItems.push({ label: "Admin Panel", href: "/admin", icon: Shield });
+  }
+
+  return (
+    <>
+      {/* DESKTOP LEFT SIDEBAR (Solid surface with 1px border) */}
+      <aside className="hidden lg:flex flex-col w-60 h-[calc(100vh-65px)] sticky top-[65px] border-r border-line bg-surface p-4 justify-between z-30 select-none">
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] uppercase font-bold tracking-wider text-muted">
+              Discover & Engage
+            </p>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href ||
+                    (item.href === "/#fresh" &&
+                      pathname === "/" &&
+                      typeof window !== "undefined" &&
+                      window.location.hash === "#fresh");
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all group ${
+                    isActive
+                      ? "bg-surface2 text-fg border border-line shadow-sm"
+                      : "text-muted hover:text-fg hover:bg-surface2"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      className={`w-4 h-4 transition-transform group-hover:scale-105 ${
+                        isActive
+                          ? "text-accent"
+                          : item.highlight
+                          ? "text-accent"
+                          : item.vip
+                          ? "text-warning"
+                          : "text-muted group-hover:text-fg"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                  </div>
+
+                  {item.badge && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-success/15 text-success border border-success/30">
+                      {item.badge}
+                    </span>
+                  )}
+                  {item.vip && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                      20x
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* QUICK CLIPPER TIP CARD */}
+          <div className="p-3.5 rounded-2xl bg-surface2 border border-line space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-fg">
+              <Zap className="w-3.5 h-3.5 text-warning fill-warning" />
+              <span>Watch Rule</span>
+            </div>
+            <p className="text-[11px] text-muted leading-relaxed">
+              Watch clips for 13+ seconds to earn credits. Watch verified Owner clips for{" "}
+              <strong className="text-fg">+2 bonus slots & +2 credits</strong>!
+            </p>
+          </div>
+        </div>
+
+        {/* SIDEBAR FOOTER */}
+        <div className="pt-3 border-t border-line text-[10px] text-muted flex items-center justify-between">
+          <span>ClipEarn Platform</span>
+          <span className="text-fg font-medium">Solid Theme</span>
+        </div>
+      </aside>
+
+      {/* MOBILE BOTTOM NAVIGATION TAB BAR */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-surface border-t border-line z-50 flex items-center justify-around px-2 select-none">
+        {navItems.slice(0, 5).map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`flex flex-col items-center justify-center gap-1 py-1 px-2 rounded-xl transition-colors ${
+                isActive ? "text-accent font-bold" : "text-muted hover:text-fg"
+              }`}
+            >
+              <Icon
+                className={`w-5 h-5 ${
+                  item.highlight
+                    ? "p-0.5 rounded-lg bg-accent text-accent-fg"
+                    : ""
+                }`}
+              />
+              <span className="text-[10px]">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
+  );
+}
