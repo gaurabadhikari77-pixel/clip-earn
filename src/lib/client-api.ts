@@ -73,9 +73,9 @@ export const clientApi = {
     for (const v of videos) {
       const isWatched = watchedVideoIds.has(v.id);
 
-      // If viewer has already engaged with this video, remove it from their feed completely
-      // (Only for this viewer; other users who haven't watched it will still see it)
+      // If viewer has already engaged with this video, include in watched list and exclude from active feed
       if (isWatched) {
+        watchedVideos.push(v);
         continue;
       }
 
@@ -101,6 +101,7 @@ export const clientApi = {
     pinnedAndVipVideos.sort(sortByDate);
     freshVideos.sort(sortByFewestEngagements);
     communityVideos.sort(sortByDate);
+    watchedVideos.sort(sortByDate);
 
     return {
       sections: {
@@ -108,7 +109,7 @@ export const clientApi = {
         pinnedAndVip: pinnedAndVipVideos,
         fresh: freshVideos,
         community: communityVideos,
-        watched: [],
+        watched: watchedVideos,
       },
       watchedVideoIds: Array.from(watchedVideoIds),
       totalCount: videos.length,
@@ -352,7 +353,23 @@ export const clientApi = {
     return db.deleteVideo(videoId);
   },
 
-  async pinVideo(videoId: string, durationHours: number) {
+  async pinVideo(videoId: string, durationHours = 24) {
     return db.pinVideo(videoId, durationHours);
+  },
+
+  async unpinVideo(videoId: string) {
+    return db.unpinVideo(videoId);
+  },
+
+  async updateVideo(videoId: string, updates: Partial<Video>) {
+    return db.updateVideo(videoId, updates);
+  },
+
+  async toggleOwnerVideo(videoId: string) {
+    return db.toggleOwnerVideo(videoId);
+  },
+
+  async banUser(userId: string) {
+    return db.banUser(userId, true);
   },
 };

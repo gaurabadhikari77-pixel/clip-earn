@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
   Flame,
@@ -16,10 +16,17 @@ import {
   Film,
   Sparkle,
   Zap,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Ban,
+  Copy,
 } from "lucide-react";
 import { Video } from "@/types";
-import { siteConfig } from "@/config/site";
+import { siteConfig, isOwnerEmail } from "@/config/site";
 import { useApp } from "@/context/AppContext";
+import { clientApi } from "@/lib/client-api";
+import { EditVideoModal } from "./EditVideoModal";
 
 interface VideoCardProps {
   video: Video;
@@ -35,9 +42,13 @@ export function VideoCard({
   className = "",
   isFresh = false,
 }: VideoCardProps) {
-  const { user, startEngagement } = useApp();
+  const { user, startEngagement, showToast } = useApp();
   const [imgError, setImgError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showOwnerMenu, setShowOwnerMenu] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const isOwner = user?.role === "owner" || (user?.email && isOwnerEmail(user.email));
 
   const platformInfo =
     siteConfig.platforms.find((p) => p.id === video.platform) ||
@@ -46,6 +57,99 @@ export function VideoCard({
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     startEngagement(video);
+  };
+
+  const handleTogglePin = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    try {
+      if (video.isPinned) {
+        await clientApi.unpinVideo(video.id);
+        showToast("Clip unpinned from Showcase.", "info");
+      } else {
+        await clientApi.pinVideo(video.id, 24);
+        showToast("Clip pinned to Showcase for 24 hours!", "success");
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_video_updated", { detail: { videoId: video.id } })
+        );
+      }
+    } catch {
+      showToast("Error updating pin state", "error");
+    }
+  };
+
+  const handleToggleSpotlight = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    try {
+      await clientApi.toggleOwnerVideo(video.id);
+      showToast(
+        video.isOwnerVideo
+          ? "Removed from Official Owner Spotlight"
+          : "Promoted to Official Owner Spotlight (+2 Bonus Slots per viewer)!",
+        "success"
+      );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_video_updated", { detail: { videoId: video.id } })
+        );
+      }
+    } catch {
+      showToast("Error updating spotlight status", "error");
+    }
+  };
+
+  const handleBanUser = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    if (
+      !confirm(
+        `Are you sure you want to ban creator "${video.userName}" and hide all clips posted by this creator?`
+      )
+    ) {
+      return;
+    }
+    try {
+      await clientApi.banUser(video.userId);
+      showToast(`Creator @${video.userName} has been banned. All clips hidden.`, "success");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_video_updated", { detail: { videoId: video.id } })
+        );
+      }
+    } catch {
+      showToast("Failed to ban user", "error");
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    if (!confirm(`Are you sure you want to permanently delete "${video.title}"?`)) {
+      return;
+    }
+    try {
+      await clientApi.deleteVideo(video.id);
+      showToast("Clip deleted permanently.", "success");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_video_updated", { detail: { videoId: video.id } })
+        );
+      }
+    } catch {
+      showToast("Failed to delete clip", "error");
+    }
+  };
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(video.url);
+      showToast("Video link copied to clipboard!", "success");
+    }
   };
 
   const isVipWatchingVip =
@@ -114,8 +218,8 @@ export function VideoCard({
         {/* Soft vignette overlays strictly for text readability over thumbnail */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/40 pointer-events-none" />
 
-        {/* TOP STATUS BADGES */}
-        <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-1 z-10">
+        {/* TOP STATUS BADGES & OWNER CONTROLS */}
+        <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-1 z-20">
           {/* Platform Badge (Solid pill) */}
           <span
             className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider border border-white/20 bg-black/60 text-white shadow-sm"
@@ -123,40 +227,149 @@ export function VideoCard({
             {platformInfo.name}
           </span>
 
-          {/* Section Badges */}
-          <div className="flex flex-col items-end gap-1">
-            {video.isOwnerVideo && (
-              <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-warning text-black shadow-sm flex items-center gap-1 border border-warning/50">
-                <Crown className="w-2.5 h-2.5 fill-black" />
-                <span>Bonus +2</span>
-              </span>
-            )}
+          {/* Section Badges + Owner Three-Dots Button */}
+          <div className="flex items-start gap-1.5">
+            <div className="flex flex-col items-end gap-1">
+              {video.isOwnerVideo && (
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-warning text-black shadow-sm flex items-center gap-1 border border-warning/50">
+                  <Crown className="w-2.5 h-2.5 fill-black" />
+                  <span>Bonus +2</span>
+                </span>
+              )}
 
-            {video.isPinned && !video.isOwnerVideo && (
-              <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-danger text-white shadow-sm flex items-center gap-0.5">
-                <Flame className="w-2.5 h-2.5 fill-white" />
-                <span>Pinned</span>
-              </span>
-            )}
+              {video.isPinned && !video.isOwnerVideo && (
+                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-danger text-white shadow-sm flex items-center gap-0.5">
+                  <Flame className="w-2.5 h-2.5 fill-white" />
+                  <span>Pinned</span>
+                </span>
+              )}
 
-            {video.userRole === "vip" && !video.isOwnerVideo && !video.isPinned && (
-              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-accent text-accent-fg flex items-center gap-0.5 shadow-sm">
-                <Sparkles className="w-2.5 h-2.5" />
-                <span>VIP</span>
-              </span>
-            )}
+              {video.userRole === "vip" && !video.isOwnerVideo && !video.isPinned && (
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-accent text-accent-fg flex items-center gap-0.5 shadow-sm">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  <span>VIP</span>
+                </span>
+              )}
 
-            {isFresh && !video.isOwnerVideo && !video.isPinned && (
-              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-success text-white shadow-sm">
-                New
-              </span>
-            )}
+              {isFresh && !video.isOwnerVideo && !video.isPinned && (
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-success text-white shadow-sm">
+                  New
+                </span>
+              )}
 
-            {isWatched && (
-              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-black/80 border border-white/20 text-emerald-300 flex items-center gap-0.5">
-                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
-                <span>Watched</span>
-              </span>
+              {isWatched && (
+                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-black/80 border border-white/20 text-emerald-300 flex items-center gap-0.5">
+                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                  <span>Watched</span>
+                </span>
+              )}
+            </div>
+
+            {/* THREE DOTS ON OWNER'S VIEW */}
+            {isOwner && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowOwnerMenu((prev) => !prev);
+                  }}
+                  className="p-1 rounded-md bg-black/75 hover:bg-black text-white/90 hover:text-white border border-white/30 transition-all shadow-md active:scale-90"
+                  title="Owner Controls (Pin, Edit, Delete, Ban)"
+                >
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Owner Actions Dropdown Menu */}
+                {showOwnerMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowOwnerMenu(false);
+                      }}
+                    />
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 mt-1 w-48 rounded-xl bg-surface border border-line p-1 shadow-2xl z-50 text-xs text-fg space-y-0.5"
+                    >
+                      <div className="px-2 py-1 border-b border-line text-[10px] font-black uppercase tracking-wider text-muted flex items-center justify-between">
+                        <span>Owner Controls</span>
+                        <Crown className="w-3 h-3 text-warning" />
+                      </div>
+
+                      {/* Pin / Unpin */}
+                      <button
+                        type="button"
+                        onClick={handleTogglePin}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-fg transition-colors"
+                      >
+                        <Flame className="w-3.5 h-3.5 text-danger shrink-0" />
+                        <span>{video.isPinned ? "Unpin Clip" : "Pin Clip (24h)"}</span>
+                      </button>
+
+                      {/* Edit Clip */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowOwnerMenu(false);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-fg transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-accent shrink-0" />
+                        <span>Edit Clip</span>
+                      </button>
+
+                      {/* Toggle Owner Spotlight */}
+                      <button
+                        type="button"
+                        onClick={handleToggleSpotlight}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-fg transition-colors"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-warning shrink-0" />
+                        <span className="truncate">
+                          {video.isOwnerVideo ? "Remove Spotlight" : "Set Owner Spotlight"}
+                        </span>
+                      </button>
+
+                      {/* Copy URL */}
+                      <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-fg transition-colors"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-muted shrink-0" />
+                        <span>Copy URL</span>
+                      </button>
+
+                      <div className="border-t border-line my-0.5" />
+
+                      {/* Ban Creator */}
+                      <button
+                        type="button"
+                        onClick={handleBanUser}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-danger/10 text-danger text-left font-semibold transition-colors"
+                      >
+                        <Ban className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">Ban @{video.userName}</span>
+                      </button>
+
+                      {/* Delete Clip */}
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-danger/10 text-danger text-left font-semibold transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Delete Clip</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -251,6 +464,14 @@ export function VideoCard({
           </div>
         </div>
       </div>
+
+      {/* OWNER EDIT MODAL */}
+      {isOwner && isEditModalOpen && (
+        <EditVideoModal
+          video={video}
+          onClose={() => setIsEditModalOpen(false)}
+        />
+      )}
     </motion.div>
   );
 }

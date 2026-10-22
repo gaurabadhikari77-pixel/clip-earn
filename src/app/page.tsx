@@ -72,22 +72,18 @@ export default function FeedPage() {
     fetchClips();
   }, [selectedCategory, selectedPlatform, user?.id]);
 
-  // Remove engaged video in real time from this viewer's feed
+  // Refresh feed in real time when engagement is verified or owner updates a clip
   useEffect(() => {
-    const handleEngagementVerified = (e: any) => {
-      const vid = e.detail?.videoId;
-      if (!vid) return;
-      setSections((prev) => ({
-        owner: prev.owner ? prev.owner.filter((v) => v.id !== vid) : [],
-        pinnedAndVip: prev.pinnedAndVip ? prev.pinnedAndVip.filter((v) => v.id !== vid) : [],
-        fresh: prev.fresh ? prev.fresh.filter((v) => v.id !== vid) : [],
-        community: prev.community ? prev.community.filter((v) => v.id !== vid) : [],
-        watched: [],
-      }));
+    const handleRefresh = () => {
+      fetchClips();
     };
 
-    window.addEventListener("clipearn_engagement_verified", handleEngagementVerified);
-    return () => window.removeEventListener("clipearn_engagement_verified", handleEngagementVerified);
+    window.addEventListener("clipearn_engagement_verified", handleRefresh);
+    window.addEventListener("clipearn_video_updated", handleRefresh);
+    return () => {
+      window.removeEventListener("clipearn_engagement_verified", handleRefresh);
+      window.removeEventListener("clipearn_video_updated", handleRefresh);
+    };
   }, []);
 
   const watchedSet = useMemo(() => new Set(watchedIds), [watchedIds]);
@@ -347,6 +343,45 @@ export default function FeedPage() {
                   onReportClick={(v) => setReportTargetVideo(v)}
                 />
               </div>
+            )}
+
+            {/* SECTION 5: WATCHED VIDEOS (At the very end of the page) */}
+            {sections.watched && sections.watched.length > 0 && (
+              <section className="pt-6 border-t border-line space-y-4">
+                <div className="flex items-center justify-between border-b border-line pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-xl bg-surface2 border border-line text-success">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black tracking-tight text-fg flex items-center gap-2">
+                        <span>Watched Videos</span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          Completed
+                        </span>
+                      </h2>
+                      <p className="text-xs text-muted font-medium">
+                        Clips you have successfully engaged with and earned watch credits for
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1 rounded-lg border border-line">
+                    {sections.watched.length} watched
+                  </span>
+                </div>
+
+                {/* Grid of watched videos */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 opacity-80 hover:opacity-100 transition-opacity">
+                  {sections.watched.map((clip) => (
+                    <VideoCard
+                      key={clip.id}
+                      video={clip}
+                      isWatched={true}
+                      onReportClick={(v) => setReportTargetVideo(v)}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         );

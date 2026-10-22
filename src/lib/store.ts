@@ -153,6 +153,37 @@ export const db = {
     return true;
   },
 
+  unpinVideo(id: string): boolean {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return false;
+
+    video.isPinned = false;
+    video.pinnedUntil = null;
+    saveStore();
+    return true;
+  },
+
+  updateVideo(id: string, updates: Partial<Video>): Video | null {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return null;
+
+    Object.assign(video, updates);
+    saveStore();
+    return video;
+  },
+
+  toggleOwnerVideo(id: string): boolean {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return false;
+
+    video.isOwnerVideo = !video.isOwnerVideo;
+    saveStore();
+    return true;
+  },
+
   incrementVideoStats(id: string, view = true, engagement = true) {
     const store = getStore();
     const video = store.videos.find((v) => v.id === id);
