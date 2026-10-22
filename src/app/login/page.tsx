@@ -69,7 +69,7 @@ export default function LoginPage() {
         }
         await firebaseDb.upsertUser(data.user);
         await refreshUserData();
-        showToast(`Welcome to ClipEarn, ${data.user.name}!`, "success");
+        showToast(`Welcome to ClipEarn, ${data.user.nickname || data.user.name || "Clipper"}!`, "success");
         router.push("/");
       }
     } catch (err: any) {

@@ -108,7 +108,7 @@ export default function UploadPage() {
       await clientApi.postVideo({
         userId: user.id,
         userEmail: user.email,
-        userName: user.name,
+        userName: user.nickname || user.name || "Clipper",
         userAvatar: user.avatar,
         url: url.trim(),
         title: title.trim() || "Viral Clip",

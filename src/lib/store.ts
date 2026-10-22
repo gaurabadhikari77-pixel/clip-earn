@@ -28,7 +28,7 @@ declare global {
   } | undefined;
 }
 
-const STORAGE_KEY = "clipearn_local_store_v6";
+const STORAGE_KEY = "clipearn_local_store_v7";
 
 export function saveStore() {
   if (typeof window !== "undefined" && global.__CLIPEARN_STORE__) {
@@ -42,12 +42,13 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
   if (!global.__CLIPEARN_STORE__) {
     if (typeof window !== "undefined") {
       try {
-        // Remove legacy store caches containing old mock/seed videos
+        // Remove legacy store caches containing old mock/seed videos and dummy users
         localStorage.removeItem("clipearn_local_store_v1");
         localStorage.removeItem("clipearn_local_store_v2");
         localStorage.removeItem("clipearn_local_store_v3");
         localStorage.removeItem("clipearn_local_store_v4");
         localStorage.removeItem("clipearn_local_store_v5");
+        localStorage.removeItem("clipearn_local_store_v6");
 
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -55,6 +56,14 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
           if (parsed) {
             // Guarantee array
             if (!Array.isArray(parsed.videos)) parsed.videos = [];
+            if (!Array.isArray(parsed.users)) parsed.users = [...sampleUsers];
+            // Filter out any dummy sample users from legacy saved stores
+            parsed.users = parsed.users.filter(
+              (u: User) =>
+                u.id !== "usr_vip_01" &&
+                u.id !== "usr_creator_03" &&
+                !u.id.startsWith("usr_vip_")
+            );
             global.__CLIPEARN_STORE__ = parsed;
             return global.__CLIPEARN_STORE__!;
           }
@@ -244,8 +253,8 @@ export const db = {
   },
 
   /**
-   * UPSERTS user row (id, email, name, avatar, role, vip_until, daily_limit_override, bonus_slots_today, credits, created_at).
-   * Automatically sets OWNER role if email matches OWNER_EMAIL.
+   * UPSERTS user row.
+   * Prioritizes nickname so that Google email / real names are never exposed publicly.
    */
   upsertUser(user: {
     email: string;
@@ -255,6 +264,9 @@ export const db = {
     role?: UserRole;
     vipUntil?: string | null;
     dailyLimitOverride?: number | null;
+    nickname?: string;
+    bio?: string;
+    socialHandle?: string;
   }): User {
     const store = getStore();
     const cleanEmail = user.email.toLowerCase().trim();
@@ -270,10 +282,23 @@ export const db = {
         existing.customDailyLimit = -1;
         existing.credits = 9999;
         existing.postCredits = 9999;
+        if (!existing.nickname) existing.nickname = "ClipEarn Founder";
       }
 
-      if (user.name) existing.name = user.name;
+      if (user.nickname) {
+        existing.nickname = user.nickname.trim();
+        existing.name = user.nickname.trim();
+      } else if (!existing.nickname) {
+        existing.nickname = isOwner
+          ? "ClipEarn Founder"
+          : `Clipper_${existing.id.slice(-4).toUpperCase()}`;
+        existing.name = existing.nickname;
+      }
+
       if (user.avatar) existing.avatar = user.avatar;
+      if (user.bio !== undefined) existing.bio = user.bio;
+      if (user.socialHandle !== undefined) existing.socialHandle = user.socialHandle;
+
       if (user.vipUntil !== undefined) {
         existing.vipUntil = user.vipUntil;
         existing.vipExpiresAt = user.vipUntil;
@@ -291,11 +316,16 @@ export const db = {
       return existing;
     }
 
+    const defaultNickname = isOwner
+      ? "ClipEarn Founder"
+      : user.nickname || `Clipper_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
     // Create new user record
     const newUser: User = {
       id: user.id || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       email: cleanEmail,
-      name: user.name || cleanEmail.split("@")[0],
+      name: defaultNickname,
+      nickname: defaultNickname,
       avatar:
         user.avatar ||
         `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
@@ -310,12 +340,41 @@ export const db = {
       vipExpiresAt: user.vipUntil || null,
       isBanned: false,
       createdAt: new Date().toISOString(),
+      bio: user.bio || "",
+      socialHandle: user.socialHandle || "",
     };
 
     store.users.push(newUser);
     saveStore();
     firebaseDb.upsertUser(newUser).catch(() => {});
     return newUser;
+  },
+
+  updateUserProfile(
+    userId: string,
+    data: { nickname?: string; avatar?: string; bio?: string; socialHandle?: string }
+  ): User | null {
+    const store = getStore();
+    const user = store.users.find((u) => u.id === userId);
+    if (!user) return null;
+
+    if (data.nickname && data.nickname.trim()) {
+      user.nickname = data.nickname.trim();
+      user.name = data.nickname.trim();
+    }
+    if (data.avatar && data.avatar.trim()) {
+      user.avatar = data.avatar.trim();
+    }
+    if (data.bio !== undefined) {
+      user.bio = data.bio.trim();
+    }
+    if (data.socialHandle !== undefined) {
+      user.socialHandle = data.socialHandle.trim();
+    }
+
+    saveStore();
+    firebaseDb.upsertUser(user).catch(() => {});
+    return user;
   },
 
   updateUserRole(userId: string, role: UserRole, vipUntil?: string | null): boolean {

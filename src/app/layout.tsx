@@ -9,6 +9,7 @@ import { TopBar } from "@/components/TopBar";
 import { Sidebar } from "@/components/Sidebar";
 import { FloatingEngagementTracker } from "@/components/FloatingEngagementTracker";
 import { LoginModal } from "@/components/LoginModal";
+import { NicknameModal } from "@/components/NicknameModal";
 import { Toast } from "@/components/Toast";
 import { Footer } from "@/components/Footer";
 
@@ -193,6 +194,9 @@ export default function RootLayout({
 
               {/* Global Login Modal */}
               <LoginModal />
+
+              {/* Clipper Nickname Selection Modal */}
+              <NicknameModal />
 
               {/* Interactive toast notifications */}
               <Toast />

@@ -334,32 +334,31 @@ export default function UpgradePage() {
               </div>
             </div>
 
-            <div className="pt-8 space-y-2">
+            <div className="pt-8 space-y-2.5">
+              <a
+                href="https://www.instagram.com/gaurabb_adk/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-95 text-white font-black text-xs tracking-wider uppercase transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]"
+              >
+                <Flame className="w-4 h-4" />
+                <span>DM on Instagram to Pin Video (@gaurabb_adk)</span>
+              </a>
+
               <button
                 onClick={() => handleCheckout("pin")}
                 disabled={loadingType === "pin" || userVideos.length === 0}
-                className="w-full py-3.5 rounded-xl bg-warning hover:opacity-95 text-black font-black text-xs tracking-wider uppercase transition-opacity shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-98"
+                className="w-full py-2.5 rounded-xl bg-surface2 hover:bg-line border border-line text-fg font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingType === "pin" ? (
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Flame className="w-4 h-4" />
-                    <span>Pin Selected Video (${pinPrice})</span>
+                    <Zap className="w-4 h-4 text-warning" />
+                    <span>Instant Demo Pin (${pinPrice})</span>
                   </>
                 )}
               </button>
-
-              <div className="text-center pt-1">
-                <a
-                  href="https://www.instagram.com/gaurabb_adk/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-pink-400 hover:text-pink-300 font-bold underline inline-flex items-center gap-1"
-                >
-                  <span>Or DM @gaurabb_adk on Instagram to Pin</span>
-                </a>
-              </div>
             </div>
           </motion.div>
         </div>

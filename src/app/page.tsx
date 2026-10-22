@@ -18,6 +18,7 @@ import {
   TrendingUp,
   CheckCircle2,
   Filter,
+  Shuffle,
 } from "lucide-react";
 import { Video, ClipCategory } from "@/types";
 import { siteConfig } from "@/config/site";
@@ -80,9 +81,16 @@ export default function FeedPage() {
 
     window.addEventListener("clipearn_engagement_verified", handleRefresh);
     window.addEventListener("clipearn_video_updated", handleRefresh);
+
+    // 3-Minute Interval Shuffle: Refreshes active un-watched clips every 3 minutes so every clipper gets an equal chance
+    const shuffleTimer = setInterval(() => {
+      fetchClips();
+    }, 3 * 60 * 1000);
+
     return () => {
       window.removeEventListener("clipearn_engagement_verified", handleRefresh);
       window.removeEventListener("clipearn_video_updated", handleRefresh);
+      clearInterval(shuffleTimer);
     };
   }, []);
 

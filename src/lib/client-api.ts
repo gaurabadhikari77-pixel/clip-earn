@@ -1,6 +1,7 @@
 import { db } from "./store";
 import { fetchVideoMetadata } from "./video-parser";
 import { Video, User, SiteSettings, UserRole, ClipCategory } from "@/types";
+import { isOwnerEmail } from "@/config/site";
 
 export interface VideoSectionsResult {
   sections: {
@@ -93,22 +94,38 @@ export const clientApi = {
     const sortByDate = (a: Video, b: Video) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 
-    const sortByFewestEngagements = (a: Video, b: Video) =>
-      (a.engagementsCount || 0) - (b.engagementsCount || 0) ||
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-
     ownerVideos.sort(sortByDate);
     pinnedAndVipVideos.sort(sortByDate);
-    freshVideos.sort(sortByFewestEngagements);
-    communityVideos.sort(sortByDate);
     watchedVideos.sort(sortByDate);
+
+    // 3-Minute Interval Shuffle for Community & Fresh clips (Fair rotation for all clippers)
+    const shuffleWindow = Math.floor(Date.now() / (3 * 60 * 1000));
+    const shuffleWithSeed = <T>(array: T[], seed: number): T[] => {
+      const arr = [...array];
+      let m = arr.length;
+      let s = seed + 1337;
+      const nextRandom = () => {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+      while (m) {
+        const i = Math.floor(nextRandom() * m--);
+        const t = arr[m];
+        arr[m] = arr[i];
+        arr[i] = t;
+      }
+      return arr;
+    };
+
+    const rotatedCommunity = shuffleWithSeed(communityVideos, shuffleWindow);
+    const rotatedFresh = shuffleWithSeed(freshVideos, shuffleWindow + 42);
 
     return {
       sections: {
         owner: ownerVideos,
         pinnedAndVip: pinnedAndVipVideos,
-        fresh: freshVideos,
-        community: communityVideos,
+        fresh: rotatedFresh,
+        community: rotatedCommunity,
         watched: watchedVideos,
       },
       watchedVideoIds: Array.from(watchedVideoIds),
@@ -142,7 +159,8 @@ export const clientApi = {
       db.upsertUser({
         id: userId,
         email: userEmail,
-        name: userName || userEmail.split("@")[0],
+        nickname: userName || undefined,
+        name: userName || undefined,
         avatar: userAvatar,
       });
 
@@ -188,7 +206,7 @@ export const clientApi = {
 
     const newVideo = db.addVideo({
       userId: user.id,
-      userName: user.name,
+      userName: user.nickname || user.name || "Clipper",
       userAvatar: user.avatar,
       userRole: user.role,
       title: finalTitle,
@@ -269,7 +287,14 @@ export const clientApi = {
    * Fetches leaderboard.
    */
   async getLeaderboard() {
-    const users = db.getUsers().filter((u) => !u.isBanned);
+    const users = db.getUsers().filter(
+      (u) =>
+        !u.isBanned &&
+        u.id !== "usr_vip_01" &&
+        u.id !== "usr_creator_03" &&
+        !u.id.startsWith("usr_vip_") &&
+        !u.id.startsWith("usr_creator_")
+    );
     const videos = db.getVideos();
     const engagements = db.getAllEngagements();
 
@@ -280,9 +305,15 @@ export const clientApi = {
       const totalViews = userVideos.reduce((acc, v) => acc + (v.viewsCount || 0), 0);
       const score = (given * 2) + received + (userVideos.length * 5);
 
+      const isOwner = user.role === "owner" || (user.email && isOwnerEmail(user.email));
+      const displayName =
+        user.nickname ||
+        (isOwner ? "ClipEarn Founder" : `Clipper_${user.id.slice(-4).toUpperCase()}`);
+
       return {
         id: user.id,
-        name: user.name,
+        name: displayName,
+        nickname: displayName,
         avatar: user.avatar,
         role: user.role,
         createdAt: user.createdAt,
@@ -371,5 +402,12 @@ export const clientApi = {
 
   async banUser(userId: string) {
     return db.banUser(userId, true);
+  },
+
+  async updateUserProfile(
+    userId: string,
+    data: { nickname?: string; avatar?: string; bio?: string; socialHandle?: string }
+  ) {
+    return db.updateUserProfile(userId, data);
   },
 };

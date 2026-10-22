@@ -23,6 +23,9 @@ export interface User {
   postsTodayCount?: number;
   theme?: string;
   customAccent?: string | null;
+  nickname?: string;
+  bio?: string;
+  socialHandle?: string;
 }
 
 export interface OwnerClipReward {

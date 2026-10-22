@@ -11,6 +11,7 @@ import {
   Crown,
   User,
   Zap,
+  Pin,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
@@ -24,6 +25,14 @@ export function Sidebar() {
     { label: "Upload Clip", href: "/post", icon: PlusCircle, highlight: true },
     { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { label: "VIP Upgrade", href: "/upgrade", icon: Crown, vip: true },
+    {
+      label: "Pin Video (24h)",
+      href: "https://www.instagram.com/gaurabb_adk/",
+      icon: Pin,
+      isPin: true,
+      external: true,
+      badge: "Insta",
+    },
     { label: "My Profile", href: "/profile", icon: User },
   ];
 
@@ -47,10 +56,15 @@ export function Sidebar() {
                       typeof window !== "undefined" &&
                       window.location.hash === "#fresh");
 
+              const LinkComponent = item.external ? "a" : Link;
+              const linkProps = item.external
+                ? { href: item.href, target: "_blank", rel: "noopener noreferrer" }
+                : { href: item.href };
+
               return (
-                <Link
+                <LinkComponent
                   key={item.label}
-                  href={item.href}
+                  {...(linkProps as any)}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all group ${
                     isActive
                       ? "bg-surface2 text-fg border border-line shadow-sm"
@@ -66,6 +80,8 @@ export function Sidebar() {
                           ? "text-accent"
                           : item.vip
                           ? "text-warning"
+                          : (item as any).isPin
+                          ? "text-amber-400"
                           : "text-muted group-hover:text-fg"
                       }`}
                     />
@@ -73,7 +89,13 @@ export function Sidebar() {
                   </div>
 
                   {item.badge && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-success/15 text-success border border-success/30">
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                        (item as any).isPin
+                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                          : "bg-success/15 text-success border border-success/30"
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -82,7 +104,7 @@ export function Sidebar() {
                       20x
                     </span>
                   )}
-                </Link>
+                </LinkComponent>
               );
             })}
           </div>

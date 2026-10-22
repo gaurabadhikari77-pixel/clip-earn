@@ -52,7 +52,7 @@ export function LoginModal() {
           createdAt: data.user.createdAt,
         });
 
-        showToast(`Welcome back, ${data.user.name}!`, "success");
+        showToast(`Welcome back, ${data.user.nickname || data.user.name || "Clipper"}!`, "success");
         closeLoginModal();
         await refreshUserData();
       }
@@ -100,7 +100,7 @@ export function LoginModal() {
         createdAt: data.user.createdAt,
       });
 
-      showToast(`Signed in as ${data.user.name}${data.user.role === "owner" ? " (Platform Owner)" : ""}`, "success");
+      showToast(`Signed in as ${data.user.nickname || data.user.name || "Clipper"}${data.user.role === "owner" ? " (Platform Owner)" : ""}`, "success");
       closeLoginModal();
       await refreshUserData();
     } catch (err: any) {
