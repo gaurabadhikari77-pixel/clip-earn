@@ -6,6 +6,8 @@ import { X, Flag, AlertTriangle } from "lucide-react";
 import { Video } from "@/types";
 import { useApp } from "@/context/AppContext";
 
+import { clientApi } from "@/lib/client-api";
+
 interface ReportModalProps {
   video: Video | null;
   onClose: () => void;
@@ -28,25 +30,11 @@ export function ReportModal({ video, onClose }: ReportModalProps) {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/videos/${video.id}/report`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reporterId: user.id,
-          reason,
-          details,
-        }),
-      });
-
-      if (res.ok) {
-        showToast("Video reported. Our moderation team will review it.", "success");
-        onClose();
-      } else {
-        const data = await res.json();
-        showToast(data.error || "Failed to submit report", "error");
-      }
+      await clientApi.reportVideo(video.id, user.id, reason, details);
+      showToast("Video reported. Our moderation team will review it.", "success");
+      onClose();
     } catch {
-      showToast("Network error submitting report", "error");
+      showToast("Failed to submit report", "error");
     } finally {
       setSubmitting(false);
     }

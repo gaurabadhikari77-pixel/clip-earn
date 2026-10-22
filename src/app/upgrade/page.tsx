@@ -19,10 +19,11 @@ import {
 import { useApp } from "@/context/AppContext";
 import { AdSlot } from "@/components/AdSlot";
 import { Video, Transaction } from "@/types";
+import { db } from "@/lib/store";
 
 export default function UpgradePage() {
   const router = useRouter();
-  const { user, settings, showToast } = useApp();
+  const { user, settings, showToast, refreshUserData } = useApp();
   const [loadingType, setLoadingType] = useState<"vip" | "pin" | null>(null);
   const [userVideos, setUserVideos] = useState<Video[]>([]);
   const [selectedPinVideoId, setSelectedPinVideoId] = useState<string>("");
@@ -76,22 +77,27 @@ export default function UpgradePage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        showToast(data.error || "Failed to start checkout", "error");
-        setLoadingType(null);
-        return;
-      }
-
-      if (data.url) {
-        // Redirect to Stripe checkout (or simulated demo checkout)
-        window.location.href = data.url;
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
       }
     } catch {
-      showToast("Network error initiating checkout", "error");
-      setLoadingType(null);
+      // Fallback for static hosting (GitHub Pages)
     }
+
+    // Direct simulation on GitHub Pages
+    if (type === "vip") {
+      db.updateUserRole(user.id, "vip");
+      await refreshUserData();
+      showToast("Upgraded to VIP Creator! 20 posts per day unlocked.", "success");
+    } else if (type === "pin" && selectedPinVideoId) {
+      db.pinVideo(selectedPinVideoId, 24);
+      showToast("Clip pinned to Spotlight for 24 hours!", "success");
+    }
+    setLoadingType(null);
   };
 
   return (

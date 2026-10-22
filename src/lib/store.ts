@@ -28,8 +28,31 @@ declare global {
   } | undefined;
 }
 
-function getStore() {
-  if (!global.__CLIPEARN_STORE__ || global.__CLIPEARN_STORE__.videos.length < seedAllClips.length) {
+const STORAGE_KEY = "clipearn_local_store_v1";
+
+export function saveStore() {
+  if (typeof window !== "undefined" && global.__CLIPEARN_STORE__) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(global.__CLIPEARN_STORE__));
+    } catch {}
+  }
+}
+
+function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
+  if (!global.__CLIPEARN_STORE__) {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.videos) && parsed.videos.length > 0) {
+            global.__CLIPEARN_STORE__ = parsed;
+            return global.__CLIPEARN_STORE__!;
+          }
+        }
+      } catch {}
+    }
+
     global.__CLIPEARN_STORE__ = {
       videos: [...seedAllClips],
       users: [...sampleUsers],
@@ -40,7 +63,7 @@ function getStore() {
       transactions: [],
     };
   }
-  return global.__CLIPEARN_STORE__;
+  return global.__CLIPEARN_STORE__!;
 }
 
 /**
@@ -93,6 +116,7 @@ export const db = {
       reportsCount: 0,
     };
     store.videos.unshift(newVideo);
+    saveStore();
     firebaseDb.addVideo(newVideo).catch(() => {});
     return newVideo;
   },
@@ -102,6 +126,7 @@ export const db = {
     const index = store.videos.findIndex((v) => v.id === id);
     if (index !== -1) {
       store.videos.splice(index, 1);
+      saveStore();
       return true;
     }
     return false;
@@ -115,6 +140,7 @@ export const db = {
     video.isPinned = true;
     const expiry = new Date(Date.now() + durationHours * 3600 * 1000);
     video.pinnedUntil = expiry.toISOString();
+    saveStore();
     return true;
   },
 
@@ -124,6 +150,7 @@ export const db = {
     if (video) {
       if (view) video.viewsCount += 1;
       if (engagement) video.engagementsCount += 1;
+      saveStore();
     }
   },
 
@@ -205,6 +232,7 @@ export const db = {
         existing.customDailyLimit = user.dailyLimitOverride;
       }
 
+      saveStore();
       firebaseDb.upsertUser(existing).catch(() => {});
       return existing;
     }
@@ -231,6 +259,7 @@ export const db = {
     };
 
     store.users.push(newUser);
+    saveStore();
     firebaseDb.upsertUser(newUser).catch(() => {});
     return newUser;
   },
@@ -252,6 +281,7 @@ export const db = {
       user.vipUntil = null;
       user.vipExpiresAt = null;
     }
+    saveStore();
     return true;
   },
 
@@ -479,6 +509,7 @@ export const db = {
           this.incrementVideoStats(videoId, true, false);
         }
 
+        saveStore();
         return {
           success: true,
           creditAwarded: true,
@@ -505,6 +536,7 @@ export const db = {
           });
         }
         this.incrementVideoStats(videoId, true, false);
+        saveStore();
         return {
           success: true,
           creditAwarded: false,
@@ -532,6 +564,7 @@ export const db = {
         });
       }
       this.incrementVideoStats(videoId, true, false);
+      saveStore();
       return {
         success: true,
         creditAwarded: false,
@@ -564,6 +597,7 @@ export const db = {
       this.incrementVideoStats(videoId, true, false);
     }
 
+    saveStore();
     return {
       success: true,
       creditAwarded,

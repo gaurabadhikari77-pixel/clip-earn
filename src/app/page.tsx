@@ -26,6 +26,7 @@ import { VideoCard } from "@/components/VideoCard";
 import { ClipRow } from "@/components/ClipRow";
 import { AdSlot } from "@/components/AdSlot";
 import { ReportModal } from "@/components/ReportModal";
+import { clientApi } from "@/lib/client-api";
 
 export default function FeedPage() {
   const { user } = useApp();
@@ -53,17 +54,13 @@ export default function FeedPage() {
   const fetchClips = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (selectedPlatform !== "all") params.append("platform", selectedPlatform);
-      if (selectedCategory !== "all") params.append("category", selectedCategory);
-      if (user?.id) params.append("userId", user.id);
-
-      const res = await fetch(`/api/videos?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSections(data.sections || {});
-        setWatchedIds(data.watchedVideoIds || []);
-      }
+      const data = await clientApi.getVideos({
+        platform: selectedPlatform !== "all" ? selectedPlatform : undefined,
+        category: selectedCategory !== "all" ? selectedCategory : undefined,
+        userId: user?.id,
+      });
+      setSections(data.sections || {});
+      setWatchedIds(data.watchedVideoIds || []);
     } catch (e) {
       console.error("Error loading feed clips:", e);
     } finally {

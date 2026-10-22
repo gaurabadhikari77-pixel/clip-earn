@@ -23,6 +23,7 @@ import { useApp } from "@/context/AppContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Video } from "@/types";
 import { VideoCard } from "@/components/VideoCard";
+import { clientApi } from "@/lib/client-api";
 
 export default function ProfilePage() {
   const { user, limitStats } = useApp();
@@ -48,8 +49,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user?.id) {
       setLoading(true);
-      fetch(`/api/videos?userId=${user.id}`)
-        .then((res) => res.json())
+      clientApi.getVideos({ userId: user.id })
         .then((data) => {
           const all: Video[] = [
             ...(data.sections?.owner || []),

@@ -6,6 +6,7 @@ import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { auth, onAuthStateChanged, signOutUser } from "@/lib/firebase";
 import { User, Video, SiteSettings, UserRole } from "@/types";
 import { siteConfig } from "@/config/site";
+import { clientApi } from "@/lib/client-api";
 
 export interface PostLimitStats {
   postsUsedToday: number;
@@ -96,14 +97,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshUserData = useCallback(async () => {
     try {
       const storedUserId = typeof window !== "undefined" ? localStorage.getItem("clipearn_userId") : null;
-      const url = storedUserId ? `/api/auth/me?userId=${storedUserId}` : "/api/auth/me";
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        setLimitStats(data.limitStats);
-        if (data.user && typeof window !== "undefined") {
-          localStorage.setItem("clipearn_userId", data.user.id);
+      if (storedUserId) {
+        const data = await clientApi.getUser(storedUserId);
+        if (data.user) {
+          setUser(data.user);
+          setLimitStats(data.limitStats);
+          return;
         }
       }
     } catch (e) {
@@ -113,11 +112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/settings");
-      if (res.ok) {
-        const data = await res.json();
-        setSettings(data.settings);
-      }
+      const data = await clientApi.getSettings();
+      setSettings(data);
     } catch (e) {
       console.error("Failed to fetch settings:", e);
     }
@@ -128,23 +124,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser && fbUser.email) {
         try {
-          const res = await fetch("/api/auth/me", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: fbUser.uid,
-              email: fbUser.email,
-              name: fbUser.displayName || fbUser.email.split("@")[0],
-              avatar: fbUser.photoURL || undefined,
-            }),
+          const data = await clientApi.upsertUser({
+            id: fbUser.uid,
+            email: fbUser.email,
+            name: fbUser.displayName || fbUser.email.split("@")[0],
+            avatar: fbUser.photoURL || undefined,
           });
-          if (res.ok) {
-            const data = await res.json();
-            setUser(data.user);
-            setLimitStats(data.limitStats);
-            if (typeof window !== "undefined") {
-              localStorage.setItem("clipearn_userId", data.user.id);
-            }
+          setUser(data.user);
+          setLimitStats(data.limitStats);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("clipearn_userId", data.user.id);
           }
         } catch (e) {
           console.error("Firebase auth sync error:", e);
@@ -215,20 +204,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const res = await fetch("/api/auth/me", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: targetEmail, name, role }),
+        const data = await clientApi.upsertUser({
+          email: targetEmail,
+          name,
+          role: role === "custom" ? undefined : role,
         });
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-          setLimitStats(data.limitStats);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("clipearn_userId", data.user.id);
-          }
-          showToast(`Switched persona to: ${data.user.role.toUpperCase()} (${data.user.name})`, "success");
+        setUser(data.user);
+        setLimitStats(data.limitStats);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("clipearn_userId", data.user.id);
         }
+        showToast(`Switched persona to: ${data.user.role.toUpperCase()} (${data.user.name})`, "success");
       } catch (err: any) {
         showToast("Error switching user persona", "error");
       }
@@ -406,25 +392,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setActiveSession((prev) => (prev ? { ...prev, isVerifying: true } : null));
 
     try {
-      const res = await fetch(`/api/videos/${activeSession.video.id}/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
-          watchedSeconds: Math.floor(finalSeconds),
-          liked: activeSession.liked,
-          commented: activeSession.commented,
-          followed: activeSession.followed,
-        }),
-      });
+      const data = await clientApi.verifyEngagement(activeSession.video.id, user.id);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        showToast(data.error || "Verification failed", "error");
+      if (!data.success) {
+        showToast(data.message || "Verification failed", "error");
         setActiveSession((prev) => (prev ? { ...prev, isVerifying: false } : null));
-        return { success: false, message: data.error };
+        return { success: false, message: data.message };
       }
 
       setActiveSession((prev) =>

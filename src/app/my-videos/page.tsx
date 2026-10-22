@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Video } from "@/types";
 import { useApp } from "@/context/AppContext";
+import { db } from "@/lib/store";
 
 export default function MyVideosPage() {
   const { user, refreshUserData, showToast } = useApp();
@@ -28,20 +29,8 @@ export default function MyVideosPage() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/videos?userId=${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        const all: Video[] = [
-          ...(data.sections?.owner || []),
-          ...(data.sections?.pinned || []),
-          ...(data.sections?.vip || []),
-          ...(data.sections?.community || []),
-          ...(data.sections?.watched || []),
-        ];
-        // Filter by user ID
-        const filtered = all.filter((v) => v.userId === user.id);
-        setMyVideos(filtered);
-      }
+      const filtered = db.getVideos().filter((v) => v.userId === user.id);
+      setMyVideos(filtered);
     } catch {
       // Error handling
     } finally {
@@ -56,15 +45,9 @@ export default function MyVideosPage() {
   const handleDelete = async (videoId: string) => {
     if (!confirm("Are you sure you want to remove this video from ClipEarn?")) return;
     try {
-      const res = await fetch(`/api/videos/${videoId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id }),
-      });
-      if (res.ok) {
-        showToast("Video deleted successfully", "success");
-        setMyVideos((prev) => prev.filter((v) => v.id !== videoId));
-      }
+      db.deleteVideo(videoId);
+      showToast("Video deleted successfully", "success");
+      setMyVideos((prev) => prev.filter((v) => v.id !== videoId));
     } catch {
       showToast("Error deleting video", "error");
     }

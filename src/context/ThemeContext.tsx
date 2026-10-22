@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { db } from "@/lib/store";
 
 export type ThemeId = "midnight" | "graphite" | "ocean" | "forest" | "ember" | "snow";
 
@@ -215,14 +216,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         // Sync with logged-in user profile if exists
         const storedUserId = localStorage.getItem("clipearn_userId");
         if (storedUserId) {
-          fetch("/api/admin/users", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              targetUserId: storedUserId,
-              theme: newTheme,
-            }),
-          }).catch(() => {});
+          const u = db.getUserById(storedUserId);
+          if (u) {
+            u.theme = newTheme;
+          }
         }
       }
     },
@@ -245,14 +242,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
         const storedUserId = localStorage.getItem("clipearn_userId");
         if (storedUserId) {
-          fetch("/api/admin/users", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              targetUserId: storedUserId,
-              customAccent: hex,
-            }),
-          }).catch(() => {});
+          const u = db.getUserById(storedUserId);
+          if (u) {
+            u.customAccent = hex;
+          }
         }
       }
     },

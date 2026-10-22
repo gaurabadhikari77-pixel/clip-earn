@@ -6,6 +6,7 @@ import { signInWithGoogle } from "@/lib/firebase";
 import { firebaseDb } from "@/lib/firebase-db";
 import { useApp } from "@/context/AppContext";
 import { siteConfig } from "@/config/site";
+import { clientApi } from "@/lib/client-api";
 import { X, ShieldCheck, Sparkles, Crown, Star, User, ChevronDown } from "lucide-react";
 
 export function LoginModal() {
@@ -24,44 +25,37 @@ export function LoginModal() {
       const fbUser = cred.user;
 
       if (fbUser && fbUser.email) {
-        // 2. Upsert in backend API
-        const res = await fetch("/api/auth/me", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: fbUser.uid,
-            email: fbUser.email,
-            name: fbUser.displayName || fbUser.email.split("@")[0],
-            avatar: fbUser.photoURL || undefined,
-          }),
+        // 2. Upsert in user layer
+        const data = await clientApi.upsertUser({
+          id: fbUser.uid,
+          email: fbUser.email,
+          name: fbUser.displayName || fbUser.email.split("@")[0],
+          avatar: fbUser.photoURL || undefined,
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("clipearn_userId", data.user.id);
-          }
-
-          // 3. Sync into Firebase Firestore users collection
-          await firebaseDb.upsertUser({
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.name,
-            avatar: data.user.avatar,
-            role: data.user.role,
-            credits: data.user.credits,
-            postCredits: data.user.postCredits,
-            bonusSlotsToday: data.user.bonusSlotsToday,
-            dailyLimitOverride: data.user.dailyLimitOverride,
-            vipUntil: data.user.vipUntil,
-            createdAt: data.user.createdAt,
-          });
-
-          showToast(`Welcome back, ${data.user.name}!`, "success");
-          closeLoginModal();
-          await refreshUserData();
+        setUser(data.user);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("clipearn_userId", data.user.id);
         }
+
+        // 3. Sync into Firebase Firestore users collection
+        await firebaseDb.upsertUser({
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          avatar: data.user.avatar,
+          role: data.user.role,
+          credits: data.user.credits,
+          postCredits: data.user.postCredits,
+          bonusSlotsToday: data.user.bonusSlotsToday,
+          dailyLimitOverride: data.user.dailyLimitOverride,
+          vipUntil: data.user.vipUntil,
+          createdAt: data.user.createdAt,
+        });
+
+        showToast(`Welcome back, ${data.user.name}!`, "success");
+        closeLoginModal();
+        await refreshUserData();
       }
     } catch (err: any) {
       console.warn("Firebase Google login error:", err);
@@ -80,44 +74,35 @@ export function LoginModal() {
   const handleQuickLogin = async (email: string, name?: string, role?: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/me", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          name: name || email.split("@")[0],
-          role,
-        }),
+      const data = await clientApi.upsertUser({
+        email,
+        name: name || email.split("@")[0],
+        role: role as any,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data.user);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("clipearn_userId", data.user.id);
-        }
-
-        // Sync into Firebase Firestore
-        await firebaseDb.upsertUser({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.name,
-          avatar: data.user.avatar,
-          role: data.user.role,
-          credits: data.user.credits,
-          postCredits: data.user.postCredits,
-          bonusSlotsToday: data.user.bonusSlotsToday,
-          dailyLimitOverride: data.user.dailyLimitOverride,
-          vipUntil: data.user.vipUntil,
-          createdAt: data.user.createdAt,
-        });
-
-        showToast(`Signed in as ${data.user.role.toUpperCase()} (${data.user.name})`, "success");
-        closeLoginModal();
-        await refreshUserData();
-      } else {
-        showToast("Sign in failed", "error");
+      setUser(data.user);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("clipearn_userId", data.user.id);
       }
+
+      // Sync into Firebase Firestore
+      await firebaseDb.upsertUser({
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        avatar: data.user.avatar,
+        role: data.user.role,
+        credits: data.user.credits,
+        postCredits: data.user.postCredits,
+        bonusSlotsToday: data.user.bonusSlotsToday,
+        dailyLimitOverride: data.user.dailyLimitOverride,
+        vipUntil: data.user.vipUntil,
+        createdAt: data.user.createdAt,
+      });
+
+      showToast(`Signed in as ${data.user.role.toUpperCase()} (${data.user.name})`, "success");
+      closeLoginModal();
+      await refreshUserData();
     } catch (err: any) {
       showToast(err.message || "Failed to sign in", "error");
     } finally {

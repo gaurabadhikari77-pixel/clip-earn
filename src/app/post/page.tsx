@@ -24,6 +24,8 @@ import {
 import { useApp } from "@/context/AppContext";
 import { AdSlot } from "@/components/AdSlot";
 import { ClipCategory } from "@/types";
+import { clientApi } from "@/lib/client-api";
+import { fetchVideoMetadata } from "@/lib/video-parser";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -66,9 +68,8 @@ export default function UploadPage() {
     setErrorMsg(null);
 
     try {
-      const res = await fetch(`/api/oembed?url=${encodeURIComponent(trimmed)}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await fetchVideoMetadata(trimmed);
+      if (data.isValid) {
         setDetectedPlatform(data.platform);
         if (data.title && !title) setTitle(data.title);
         if (data.thumbnailUrl && !thumbnailUrl) setThumbnailUrl(data.thumbnailUrl);
@@ -104,36 +105,23 @@ export default function UploadPage() {
     setErrorMsg(null);
 
     try {
-      const res = await fetch("/api/videos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
-          url: url.trim(),
-          title: title.trim() || "Viral Clip",
-          thumbnailUrl: thumbnailUrl.trim() || undefined,
-          category,
-          sourceTag: sourceTag.trim() || undefined,
-        }),
+      await clientApi.postVideo({
+        userId: user.id,
+        userEmail: user.email,
+        userName: user.name,
+        userAvatar: user.avatar,
+        url: url.trim(),
+        title: title.trim() || "Viral Clip",
+        thumbnailUrl: thumbnailUrl.trim() || undefined,
+        category,
+        sourceTag: sourceTag.trim() || undefined,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          openLoginModal();
-        }
-        setErrorMsg(data.error || "Failed to post clip");
-        setSubmitting(false);
-        return;
-      }
 
       showToast("Clip uploaded! Now live on the feed.", "success");
       await refreshUserData();
       router.push("/");
     } catch (err: any) {
-      setErrorMsg(err.message || "Network error uploading clip");
+      setErrorMsg(err.message || "Error uploading clip");
       setSubmitting(false);
     }
   };

@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Video, User, Report, SiteSettings, UserRole } from "@/types";
+import { clientApi } from "@/lib/client-api";
+import { db } from "@/lib/store";
 
 export default function AdminPage() {
   const { user, showToast, refreshSettings } = useApp();
@@ -63,39 +65,27 @@ export default function AdminPage() {
   const loadData = async () => {
     try {
       // Stats
-      const statsRes = await fetch("/api/admin/stats");
-      if (statsRes.ok) setStats(await statsRes.json());
+      const statsData = await clientApi.getAdminStats();
+      setStats(statsData as any);
 
       // Videos
-      const vidRes = await fetch("/api/videos");
-      if (vidRes.ok) {
-        const d = await vidRes.json();
-        const all: Video[] = Object.values(d.sections || {})
-          .flat()
-          .filter(Boolean) as Video[];
-        setVideos(all);
-      }
+      const vidData = await clientApi.getVideos();
+      const all: Video[] = Object.values(vidData.sections || {})
+        .flat()
+        .filter(Boolean) as Video[];
+      setVideos(all);
 
       // Users
-      const usrRes = await fetch(`/api/admin/users?adminUserId=${user?.id || ""}`);
-      if (usrRes.ok) {
-        const d = await usrRes.json();
-        setUsersList(d.users || []);
-      }
+      const usersData = db.getUsers();
+      setUsersList(usersData);
 
       // Reports
-      const repRes = await fetch("/api/admin/reports");
-      if (repRes.ok) {
-        const d = await repRes.json();
-        setReports(d.reports || []);
-      }
+      const repData = await clientApi.getAdminReports();
+      setReports(repData);
 
       // Settings
-      const setRes = await fetch("/api/settings");
-      if (setRes.ok) {
-        const d = await setRes.json();
-        setSettingsForm(d.settings);
-      }
+      const setData = await clientApi.getSettings();
+      setSettingsForm(setData);
     } catch (e) {
       console.error("Failed to load admin data:", e);
     }
@@ -112,29 +102,22 @@ export default function AdminPage() {
 
     setCreatingOwnerVid(true);
     try {
-      const res = await fetch("/api/videos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          url: ownerVidUrl.trim(),
-          title: ownerVidTitle.trim() || undefined,
-          thumbnailUrl: ownerVidThumbnail.trim() || undefined,
-        }),
+      await clientApi.postVideo({
+        userId: user?.id || "owner_user",
+        userEmail: user?.email || "owner@clipearn.com",
+        userName: user?.name || "ClipEarn Owner",
+        url: ownerVidUrl.trim(),
+        title: ownerVidTitle.trim() || undefined,
+        thumbnailUrl: ownerVidThumbnail.trim() || undefined,
       });
 
-      if (res.ok) {
-        showToast("Official Owner video uploaded to Spotlight!", "success");
-        setOwnerVidUrl("");
-        setOwnerVidTitle("");
-        setOwnerVidThumbnail("");
-        loadData();
-      } else {
-        const data = await res.json();
-        showToast(data.error || "Failed to post owner video", "error");
-      }
-    } catch {
-      showToast("Error creating owner video", "error");
+      showToast("Official Owner video uploaded to Spotlight!", "success");
+      setOwnerVidUrl("");
+      setOwnerVidTitle("");
+      setOwnerVidThumbnail("");
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || "Failed to post owner video", "error");
     } finally {
       setCreatingOwnerVid(false);
     }
@@ -144,15 +127,9 @@ export default function AdminPage() {
   const handleDeleteVideo = async (videoId: string) => {
     if (!confirm("Are you sure you want to permanently remove this video?")) return;
     try {
-      const res = await fetch(`/api/videos/${videoId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id }),
-      });
-      if (res.ok) {
-        showToast("Video removed from platform", "success");
-        setVideos((prev) => prev.filter((v) => v.id !== videoId));
-      }
+      await clientApi.deleteVideo(videoId);
+      showToast("Video removed from platform", "success");
+      setVideos((prev) => prev.filter((v) => v.id !== videoId));
     } catch {
       showToast("Error deleting video", "error");
     }
@@ -164,23 +141,9 @@ export default function AdminPage() {
     updates: { role?: UserRole; customDailyLimit?: number | null; isBanned?: boolean }
   ) => {
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          adminUserId: user?.id,
-          targetUserId,
-          ...updates,
-        }),
-      });
-
-      if (res.ok) {
-        showToast("User updated successfully", "success");
-        loadData();
-      } else {
-        const d = await res.json();
-        showToast(d.error || "Update failed", "error");
-      }
+      await clientApi.updateAdminUser(targetUserId, updates);
+      showToast("User updated successfully", "success");
+      loadData();
     } catch {
       showToast("Network error updating user", "error");
     }
@@ -189,15 +152,13 @@ export default function AdminPage() {
   // Report resolution
   const handleResolveReport = async (reportId: string, status: "resolved" | "dismissed", deleteVideo = false) => {
     try {
-      const res = await fetch("/api/admin/reports", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportId, status, deleteVideo }),
-      });
-      if (res.ok) {
-        showToast(`Report marked as ${status}`, "success");
-        loadData();
+      db.updateReportStatus(reportId, status);
+      if (deleteVideo) {
+        const rep = db.getReports().find((r) => r.id === reportId);
+        if (rep?.videoId) db.deleteVideo(rep.videoId);
       }
+      showToast(`Report marked as ${status}`, "success");
+      loadData();
     } catch {
       showToast("Error updating report", "error");
     }
@@ -209,22 +170,9 @@ export default function AdminPage() {
     if (!settingsForm) return;
 
     try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          adminUserId: user?.id,
-          ...settingsForm,
-        }),
-      });
-
-      if (res.ok) {
-        showToast("Platform settings saved successfully!", "success");
-        refreshSettings();
-      } else {
-        const d = await res.json();
-        showToast(d.error || "Failed to save settings", "error");
-      }
+      await clientApi.updateSettings(settingsForm);
+      showToast("Platform settings saved successfully!", "success");
+      refreshSettings();
     } catch {
       showToast("Error saving settings", "error");
     }

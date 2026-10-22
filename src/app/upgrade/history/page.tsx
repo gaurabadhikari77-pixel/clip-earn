@@ -5,6 +5,7 @@ import Link from "next/link";
 import { History, Crown, Flame, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import { Transaction } from "@/types";
 import { useApp } from "@/context/AppContext";
+import { db } from "@/lib/store";
 
 export default function PurchaseHistoryPage() {
   const { user } = useApp();
@@ -13,11 +14,9 @@ export default function PurchaseHistoryPage() {
 
   useEffect(() => {
     if (user?.id) {
-      fetch(`/api/stripe/history?userId=${user.id}`)
-        .then((res) => res.json())
-        .then((data) => setHistory(data.transactions || []))
-        .catch(console.error)
-        .finally(() => setLoading(false));
+      const txs = db.getTransactions().filter((t) => t.userId === user.id);
+      setHistory(txs);
+      setLoading(false);
     }
   }, [user?.id]);
 

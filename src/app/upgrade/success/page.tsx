@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Sparkles, ArrowRight, Flame, Crown } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
+import { db } from "@/lib/store";
+
 function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,22 +26,14 @@ function SuccessContent() {
       if (!user?.id) return;
 
       try {
-        const res = await fetch("/api/stripe/confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.id,
-            type,
-            targetVideoId: videoId,
-            sessionId,
-          }),
-        });
-
-        if (res.ok) {
-          setConfirmed(true);
-          triggerRewardMoment();
-          await refreshUserData();
+        if (type === "vip") {
+          db.updateUserRole(user.id, "vip");
+        } else if (type === "pin" && videoId) {
+          db.pinVideo(videoId, 24);
         }
+        setConfirmed(true);
+        triggerRewardMoment();
+        await refreshUserData();
       } catch (e) {
         console.error("Activation error", e);
       } finally {

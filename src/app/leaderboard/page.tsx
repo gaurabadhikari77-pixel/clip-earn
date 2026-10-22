@@ -16,14 +16,15 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
+import { clientApi } from "@/lib/client-api";
+
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/leaderboard")
-      .then((res) => res.json())
-      .then((data) => setLeaderboard(data.leaderboard || []))
+    clientApi.getLeaderboard()
+      .then((data) => setLeaderboard(data || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
