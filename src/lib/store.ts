@@ -124,23 +124,17 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
 }
 
 /**
- * Calculates daily reset boundary relative to the daily resetHour (6:00 AM).
+ * Calculates credit & post limit reset boundary occurring every 6 hours (0:00, 6:00, 12:00, 18:00).
  */
-export function getDailyResetBoundary(resetHour = 6): { startOfToday: Date; nextReset: Date } {
+export function getDailyResetBoundary(intervalHours = 6): { startOfToday: Date; nextReset: Date } {
   const now = new Date();
-  const resetToday = new Date(now);
-  resetToday.setHours(resetHour, 0, 0, 0);
+  const currentHour = now.getHours();
+  const currentWindowStartHour = Math.floor(currentHour / intervalHours) * intervalHours;
 
-  let startOfToday: Date;
-  let nextReset: Date;
+  const startOfToday = new Date(now);
+  startOfToday.setHours(currentWindowStartHour, 0, 0, 0);
 
-  if (now.getTime() >= resetToday.getTime()) {
-    startOfToday = resetToday;
-    nextReset = new Date(resetToday.getTime() + 24 * 60 * 60 * 1000);
-  } else {
-    startOfToday = new Date(resetToday.getTime() - 24 * 60 * 60 * 1000);
-    nextReset = resetToday;
-  }
+  const nextReset = new Date(startOfToday.getTime() + intervalHours * 60 * 60 * 1000);
 
   return { startOfToday, nextReset };
 }
@@ -209,6 +203,50 @@ export const db = {
 
     video.isPinned = false;
     video.pinnedUntil = null;
+    saveStore();
+    return true;
+  },
+
+  pinToSpotlight(id: string, durationHours = 24): boolean {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return false;
+
+    // Enforce strictly 1 pinned video on owner spotlight at any time
+    for (const v of store.videos) {
+      if (v.isSpotlightPinned && v.id !== id) {
+        v.isSpotlightPinned = false;
+        v.spotlightPinnedUntil = null;
+      }
+    }
+
+    video.isSpotlightPinned = true;
+    video.isOwnerVideo = true;
+    const expiry = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+    video.spotlightPinnedUntil = expiry.toISOString();
+    saveStore();
+    return true;
+  },
+
+  unpinFromSpotlight(id: string): boolean {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return false;
+
+    video.isSpotlightPinned = false;
+    video.spotlightPinnedUntil = null;
+    saveStore();
+    return true;
+  },
+
+  refreshVideo(id: string): boolean {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return false;
+
+    video.refreshedAt = new Date().toISOString();
+    // Clear previous engagements so all users can view and support it again in active feed
+    store.engagements = store.engagements.filter((e) => e.videoId !== id);
     saveStore();
     return true;
   },

@@ -786,7 +786,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-fg">
-                    Daily Reset Hour (6 = 6:00 AM)
+                    Credit & Limit Refresh Interval (Hours, Default: 6)
                   </label>
                   <input
                     type="number"

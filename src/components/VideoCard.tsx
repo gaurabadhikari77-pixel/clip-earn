@@ -21,6 +21,8 @@ import {
   Trash2,
   Ban,
   Copy,
+  RefreshCw,
+  RotateCcw,
 } from "lucide-react";
 import { Video } from "@/types";
 import { siteConfig, isOwnerEmail } from "@/config/site";
@@ -74,6 +76,17 @@ export function VideoCard({
     return `${minutes}m left`;
   }, [video.isPinned, video.pinnedUntil]);
 
+  const spotlightPinnedRemainingText = useMemo(() => {
+    if (!video.isSpotlightPinned) return null;
+    if (!video.spotlightPinnedUntil) return "24h left";
+    const diffMs = new Date(video.spotlightPinnedUntil).getTime() - Date.now();
+    if (diffMs <= 0) return "Expired";
+    const hours = Math.floor(diffMs / (3600 * 1000));
+    const minutes = Math.floor((diffMs % (3600 * 1000)) / (60 * 1000));
+    if (hours >= 1) return `${hours}h left`;
+    return `${minutes}m left`;
+  }, [video.isSpotlightPinned, video.spotlightPinnedUntil]);
+
   useEffect(() => {
     return () => {
       if (hoverTimerRef.current) {
@@ -124,6 +137,43 @@ export function VideoCard({
       }
     } catch {
       showToast("Error updating pin state", "error");
+    }
+  };
+
+  const handleToggleSpotlightPin = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    try {
+      if (video.isSpotlightPinned) {
+        await clientApi.unpinFromSpotlight(video.id);
+        showToast("Clip unpinned from Owner Spotlight.", "info");
+      } else {
+        await clientApi.pinToSpotlight(video.id, 24);
+        showToast("Clip pinned to Owner Spotlight for 24 hours (1 daily spotlight pick)!", "success");
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_video_updated", { detail: { videoId: video.id } })
+        );
+      }
+    } catch {
+      showToast("Error updating spotlight pin state", "error");
+    }
+  };
+
+  const handleRefreshClip = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowOwnerMenu(false);
+    try {
+      await clientApi.refreshClip(video.id);
+      showToast("Clip refreshed! Restored to active community feed for all viewers.", "success");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_video_updated", { detail: { videoId: video.id } })
+        );
+      }
+    } catch {
+      showToast("Error refreshing clip", "error");
     }
   };
 
@@ -311,7 +361,17 @@ export function VideoCard({
           {/* Section Badges + Owner Three-Dots Button */}
           <div className="flex items-start gap-1.5">
             <div className="flex flex-col items-end gap-1">
-              {video.isOwnerVideo && (
+              {video.isSpotlightPinned && video.isOwnerVideo && (
+                <span
+                  title={`Daily Owner Spotlight Pin (24h) • ${spotlightPinnedRemainingText || "Active"}`}
+                  className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-black shadow-md flex items-center gap-1 border border-amber-300 font-sans"
+                >
+                  <Crown className="w-2.5 h-2.5 fill-black" />
+                  <span>Spotlight Pin • {spotlightPinnedRemainingText}</span>
+                </span>
+              )}
+
+              {video.isOwnerVideo && !video.isSpotlightPinned && (
                 <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-warning text-black shadow-sm flex items-center gap-1 border border-warning/50">
                   <Crown className="w-2.5 h-2.5 fill-black" />
                   <span>Bonus +2</span>
@@ -387,7 +447,7 @@ export function VideoCard({
                         <Crown className="w-3 h-3 text-warning" />
                       </div>
 
-                      {/* Pin / Unpin */}
+                      {/* Pin / Unpin (48h Showcase) */}
                       <button
                         type="button"
                         onClick={handleTogglePin}
@@ -395,6 +455,28 @@ export function VideoCard({
                       >
                         <Flame className="w-3.5 h-3.5 text-danger shrink-0" />
                         <span>{video.isPinned ? "Unpin Clip" : "Pin Clip (48h)"}</span>
+                      </button>
+
+                      {/* Pin to Owner Spotlight (24h - 1 daily pick) */}
+                      <button
+                        type="button"
+                        onClick={handleToggleSpotlightPin}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-amber-400 transition-colors"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-warning shrink-0" />
+                        <span>
+                          {video.isSpotlightPinned ? "Unpin Spotlight" : "Pin Spotlight (24h)"}
+                        </span>
+                      </button>
+
+                      {/* Refresh Clip to Feed (Returns clip to active feed even if watched) */}
+                      <button
+                        type="button"
+                        onClick={handleRefreshClip}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-accent transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-accent shrink-0" />
+                        <span>Refresh Clip to Feed</span>
                       </button>
 
                       {/* Edit Clip */}

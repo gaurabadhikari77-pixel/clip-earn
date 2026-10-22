@@ -216,10 +216,6 @@ export default function UpgradePage() {
                     <strong className="text-fg">Ad-Free Experience:</strong> Zero ads across the platform
                   </span>
                 </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-accent shrink-0" />
-                  <span>Cancel anytime with 1-click in your portal</span>
-                </li>
               </ul>
             </div>
 

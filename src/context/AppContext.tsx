@@ -6,7 +6,7 @@ import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { auth, onAuthStateChanged, signOutUser } from "@/lib/firebase";
 import { User, Video, SiteSettings, UserRole } from "@/types";
 import { siteConfig, isOwnerEmail } from "@/config/site";
-import { clientApi } from "@/lib/client-api";
+import { clientApi, getUserWatchedStorageKey } from "@/lib/client-api";
 
 export interface PostLimitStats {
   postsUsedToday: number;
@@ -469,14 +469,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Refresh limits & user data
       await refreshUserData();
 
-      // Persist to local storage watched videos so viewer never sees it refreshed in active feed
+      // Persist strictly to user-scoped local storage so other users are never affected
       if (typeof window !== "undefined") {
         try {
-          const current = JSON.parse(localStorage.getItem("clipearn_watched_videos") || "[]");
-          if (!current.includes(activeSession.video.id)) {
-            current.push(activeSession.video.id);
-            localStorage.setItem("clipearn_watched_videos", JSON.stringify(current));
+          const userKey = getUserWatchedStorageKey(user?.id);
+          const current = JSON.parse(localStorage.getItem(userKey) || "[]");
+          const existingIndex = current.findIndex((item: any) =>
+            typeof item === "string" ? item === activeSession.video.id : item?.id === activeSession.video.id
+          );
+          if (existingIndex === -1) {
+            current.push({
+              id: activeSession.video.id,
+              watchedAt: new Date().toISOString(),
+            });
+            localStorage.setItem(userKey, JSON.stringify(current));
           }
+          // Remove legacy un-scoped key
+          localStorage.removeItem("clipearn_watched_videos");
         } catch {}
 
         // Notify feed to immediately remove this video for this viewer

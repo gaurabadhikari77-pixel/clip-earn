@@ -168,14 +168,14 @@ export default function AboutPage() {
               <span>Daily Limits & Fair Play</span>
             </p>
             <p className="text-muted leading-relaxed text-[11px]">
-              Normal clippers have a base limit of 1 post/day upon joining, unlocking up to 5 additional slots by supporting fellow creators. All limits reset daily at 6:00 AM.
+              Normal clippers have a base limit of 1 post upon joining, unlocking up to 5 additional slots by supporting fellow creators. All limits and credits refresh every 6 hours.
             </p>
           </div>
 
           <div className="p-4 rounded-xl bg-surface2 border border-line space-y-1.5">
             <p className="font-bold text-fg flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-success" />
-              <span>VIP & 24h Pinned Showcases</span>
+              <span>VIP & 48h Pinned Showcases</span>
             </p>
             <p className="text-muted leading-relaxed text-[11px]">
               High-volume clippers can upgrade to VIP for 20 posts per day and zero ads, or pin videos for 24h guaranteed top feed placement.

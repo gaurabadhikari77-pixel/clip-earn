@@ -31,7 +31,7 @@ import { ClipRow } from "@/components/ClipRow";
 import { AdSlot } from "@/components/AdSlot";
 import { ReportModal } from "@/components/ReportModal";
 import { PinVideoModal } from "@/components/PinVideoModal";
-import { clientApi } from "@/lib/client-api";
+import { clientApi, getUserWatchedStorageKey } from "@/lib/client-api";
 
 export default function FeedPage() {
   const { user } = useApp();
@@ -92,11 +92,15 @@ export default function FeedPage() {
         userId: activeUserId || undefined,
       });
 
-      // Retrieve locally tracked watched clips
+      // Retrieve strictly user-scoped locally tracked watched clips
       let localWatched: string[] = [];
       if (typeof window !== "undefined") {
         try {
-          localWatched = JSON.parse(localStorage.getItem("clipearn_watched_videos") || "[]");
+          const userKey = getUserWatchedStorageKey(activeUserId || undefined);
+          const raw = JSON.parse(localStorage.getItem(userKey) || "[]");
+          if (Array.isArray(raw)) {
+            localWatched = raw.map((item: any) => (typeof item === "string" ? item : item?.id)).filter(Boolean);
+          }
         } catch {}
       }
 
@@ -423,15 +427,16 @@ export default function FeedPage() {
 
         return (
           <div className="space-y-10">
-            {/* SECTION 1: OWNER SPOTLIGHT (Horizontal row with crown badge) */}
+            {/* ROW 1: OWNER SPOTLIGHT (Horizontal row with crown badge) */}
             {sections.owner && sections.owner.length > 0 && (
               <ClipRow
                 title="Owner Spotlight"
-                subtitle="Official clipper strategies, velocity presets, and masterclasses"
+                subtitle="Official clipper strategies, velocity presets & daily 24h spotlighted clip"
                 icon={<Crown className="w-4 h-4 text-warning fill-warning" />}
                 badge={
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-warning/15 text-warning border border-warning/30">
-                    Official
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-warning/15 text-warning border border-warning/30 flex items-center gap-1 shadow-sm">
+                    <Crown className="w-2.5 h-2.5 fill-warning" />
+                    <span>Owner Spotlight</span>
                   </span>
                 }
                 clips={sections.owner}
@@ -440,7 +445,48 @@ export default function FeedPage() {
               />
             )}
 
-            {/* SECTION 2: FRESH CLIPS, NEEDS VIEWS (Automatic booster section) */}
+            {/* ROW 2: PINNED & VIP SHOWCASE (Promoted 48h clips & VIP creators right below Owner Spotlight) */}
+            {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (
+              <div className="pt-2">
+                <ClipRow
+                  title="Pinned & VIP Showcase"
+                  subtitle="Promoted for 48 hours • Shuffles every 3 minutes among pinned clips so each creator gets top spot"
+                  icon={<Flame className="w-4 h-4 text-amber-400 fill-amber-400" />}
+                  badge={
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                      <Flame className="w-2.5 h-2.5 fill-amber-400" />
+                      <span>48h Pin Showcase</span>
+                    </span>
+                  }
+                  actionButton={
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-surface2 border border-line text-muted"
+                        title="Pinned rotation cycle"
+                      >
+                        <RefreshCw className="w-3 h-3 text-amber-400 animate-spin-slow" />
+                        <span className="text-[11px]">Rotates in</span>
+                        <span className="font-mono text-[11px] font-black text-fg">{shuffleCountdown}</span>
+                      </div>
+                      <button
+                        onClick={() => setIsPinModalOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                        title="Pin your video for 48 hours"
+                      >
+                        <Pin className="w-3.5 h-3.5 fill-amber-400" />
+                        <span>Pin Video</span>
+                      </button>
+                    </div>
+                  }
+                  seeAllHref="/upgrade"
+                  clips={sections.pinnedAndVip}
+                  watchedSet={watchedSet}
+                  onReportClick={(v) => setReportTargetVideo(v)}
+                />
+              </div>
+            )}
+
+            {/* ROW 3: FRESH CLIPS, NEEDS VIEWS (Automatic booster section) */}
             {sections.fresh && sections.fresh.length > 0 && (
               <div id="fresh">
                 <ClipRow
@@ -464,7 +510,7 @@ export default function FeedPage() {
             {/* SECTION AD SLOT */}
             <AdSlot type="inFeed" />
 
-            {/* SECTION 3: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
+            {/* ROW 4: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
             {sections.community && sections.community.length > 0 && (
               <section className="space-y-4 pt-2">
                 <div className="flex items-center justify-between border-b border-line pb-3">
@@ -518,47 +564,6 @@ export default function FeedPage() {
                   ))}
                 </div>
               </section>
-            )}
-
-            {/* SECTION 4: PINNED AND VIP (Down at last, only displayed when VIP clips exist) */}
-            {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (
-              <div className="pt-4 border-t border-line">
-                <ClipRow
-                  title="Pinned & VIP Showcase"
-                  subtitle="Promoted for 48 hours • Shuffles every 3 minutes among pinned clips so each creator gets top spot"
-                  icon={<Flame className="w-4 h-4 text-accent fill-accent" />}
-                  badge={
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
-                      <Flame className="w-2.5 h-2.5 fill-amber-400" />
-                      <span>48h Pin Showcase</span>
-                    </span>
-                  }
-                  actionButton={
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-surface2 border border-line text-muted"
-                        title="Pinned rotation cycle"
-                      >
-                        <RefreshCw className="w-3 h-3 text-amber-400 animate-spin-slow" />
-                        <span className="text-[11px]">Rotates in</span>
-                        <span className="font-mono text-[11px] font-black text-fg">{shuffleCountdown}</span>
-                      </div>
-                      <button
-                        onClick={() => setIsPinModalOpen(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
-                        title="Pin your video for 48 hours"
-                      >
-                        <Pin className="w-3.5 h-3.5 fill-amber-400" />
-                        <span>Pin Video</span>
-                      </button>
-                    </div>
-                  }
-                  seeAllHref="/upgrade"
-                  clips={sections.pinnedAndVip}
-                  watchedSet={watchedSet}
-                  onReportClick={(v) => setReportTargetVideo(v)}
-                />
-              </div>
             )}
 
             {/* SECTION 5: WATCHED VIDEOS (At the very end of the page) */}

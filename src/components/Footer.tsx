@@ -124,7 +124,7 @@ export function Footer() {
                 <span>Anti-Abuse Verification</span>
               </li>
               <li>
-                <span>Daily 6:00 AM Reset</span>
+                <span>6-Hour Credit Refresh</span>
               </li>
             </ul>
           </div>

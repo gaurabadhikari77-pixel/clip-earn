@@ -104,7 +104,7 @@ export default function PrivacyPolicyPage() {
               To award post credits fairly when creators watch for 13+ seconds and like fellow clippers&apos; videos.
             </li>
             <li>
-              To manage daily upload limits (e.g. 1 post/day for normal clippers, 20 posts/day for VIP creators) and daily 6:00 AM resets.
+              To manage upload limits (e.g. 1 post for normal clippers, 20 posts for VIP creators) and fair 6-hour credit refreshes.
             </li>
             <li>
               To power the 3-minute fair shuffle rotation on the community feed, ensuring every clipper receives equal exposure.

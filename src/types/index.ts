@@ -53,6 +53,9 @@ export interface Video {
   isOwnerVideo: boolean;
   isPinned: boolean;
   pinnedUntil?: string | null;
+  isSpotlightPinned?: boolean;
+  spotlightPinnedUntil?: string | null;
+  refreshedAt?: string | null;
   viewsCount: number;
   engagementsCount: number;
   likesCount?: number;
@@ -69,6 +72,7 @@ export interface Engagement {
   commented: boolean;
   followed: boolean;
   verifiedAt: string;
+  createdAt?: string;
 }
 
 export interface Report {

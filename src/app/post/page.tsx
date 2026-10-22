@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -20,12 +20,17 @@ import {
   Sparkle,
   Zap,
   LogIn,
+  Play,
+  Image as ImageIcon,
+  Check,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { AdSlot } from "@/components/AdSlot";
 import { ClipCategory } from "@/types";
 import { clientApi } from "@/lib/client-api";
-import { fetchVideoMetadata } from "@/lib/video-parser";
+import { fetchVideoMetadata, getLivePreviewInfo } from "@/lib/video-parser";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -42,11 +47,16 @@ export default function UploadPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [countdownString, setCountdownString] = useState("");
+  const [previewMode, setPreviewMode] = useState<"thumbnail" | "player">("thumbnail");
+
+  const previewInfo = useMemo(() => {
+    return getLivePreviewInfo(url, (detectedPlatform as any) || "other");
+  }, [url, detectedPlatform]);
 
   const isOwner = user?.role === "owner";
   const userCredits = isOwner ? 9999 : (user?.credits ?? user?.postCredits ?? 0);
 
-  // Live countdown to 6:00 AM reset
+  // Live countdown to 6-hour reset
   useEffect(() => {
     if (!limitStats?.nextReset) return;
     const interval = setInterval(() => {
@@ -54,7 +64,8 @@ export default function UploadPage() {
       const diff = Math.max(0, target - Date.now());
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      setCountdownString(`${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m`);
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      setCountdownString(`${h.toString().padStart(2, "0")}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`);
     }, 1000);
     return () => clearInterval(interval);
   }, [limitStats?.nextReset]);
@@ -72,7 +83,7 @@ export default function UploadPage() {
       if (data.isValid) {
         setDetectedPlatform(data.platform);
         if (data.title && !title) setTitle(data.title);
-        if (data.thumbnailUrl && !thumbnailUrl) setThumbnailUrl(data.thumbnailUrl);
+        if (data.thumbnailUrl) setThumbnailUrl(data.thumbnailUrl);
       }
     } catch {
       // Non-blocking
@@ -96,7 +107,7 @@ export default function UploadPage() {
 
     if (!isOwner && limitStats && !limitStats.isUnlimited) {
       if (limitStats.postsUsedToday >= limitStats.totalLimit) {
-        setErrorMsg("You've hit today's posting limit. Resets at 6:00 AM.");
+        setErrorMsg(`You've hit the posting limit for this 6-hour cycle. Resets in ${countdownString || "a few hours"}.`);
         return;
       }
     }
@@ -209,7 +220,7 @@ export default function UploadPage() {
             <span className="font-semibold text-muted">Today&apos;s Posts</span>
             <span className="text-[11px] text-muted flex items-center gap-1">
               <Clock className="w-3 h-3 text-accent" />
-              Resets at 6:00 AM ({countdownString || "06h 00m"})
+              Resets in {countdownString || "06h 00m"} (Every 6h)
             </span>
           </div>
 
@@ -301,7 +312,7 @@ export default function UploadPage() {
               You&apos;ve hit today&apos;s limit of {effectiveTotalLimit} posts.
             </p>
             <p className="text-xs text-muted">
-              Your limit resets at 6:00 AM. {bonusRemaining > 0 ? "Watch Owner clips to unlock more slots, or upgrade" : "Upgrade"} to VIP for 20 posts per day.
+              Your upload limit refreshes every 6 hours (in {countdownString || "06h 00m"}). {bonusRemaining > 0 ? "Watch Owner clips to unlock more slots, or upgrade" : "Upgrade"} to VIP for 20 posts per cycle.
             </p>
             <Link
               href="/upgrade"
@@ -472,45 +483,184 @@ export default function UploadPage() {
           </form>
         </div>
 
-        {/* 9:16 LIVE PREVIEW CARD (1 col) */}
+        {/* 9:16 LIVE PREVIEW CARD & PLAYER (1 col) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-muted">
               Live Feed Preview
             </span>
-            <span className="text-[10px] text-muted">9:16 Vertical Shorts</span>
+            <div className="flex items-center gap-1 bg-surface2 p-0.5 rounded-lg border border-line">
+              <button
+                type="button"
+                onClick={() => setPreviewMode("thumbnail")}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 ${
+                  previewMode === "thumbnail"
+                    ? "bg-accent text-accent-fg shadow-sm"
+                    : "text-muted hover:text-fg"
+                }`}
+              >
+                <ImageIcon className="w-3 h-3" />
+                <span>Thumbnail</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode("player")}
+                className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 ${
+                  previewMode === "player"
+                    ? "bg-accent text-accent-fg shadow-sm"
+                    : "text-muted hover:text-fg"
+                }`}
+              >
+                <Play className="w-3 h-3" />
+                <span>Live Player</span>
+              </button>
+            </div>
           </div>
 
-          <div className="w-[200px] mx-auto sm:mx-0">
-            <div className="relative aspect-[9/16] w-full rounded-2xl overflow-hidden border border-line bg-surface shadow-xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={
-                  thumbnailUrl ||
-                  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
-                }
-                alt="Preview"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/50" />
+          <div className="w-[230px] sm:w-[250px] mx-auto">
+            <div className="relative aspect-[9/16] w-full rounded-2xl overflow-hidden border-2 border-line bg-black shadow-2xl group">
+              {previewMode === "player" && previewInfo.previewUrl ? (
+                <div className="w-full h-full relative bg-black flex flex-col justify-center items-center">
+                  {previewInfo.type === "video" ? (
+                    <video
+                      src={previewInfo.previewUrl}
+                      controls
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <iframe
+                      src={previewInfo.previewUrl}
+                      title="Live Preview Player"
+                      className="w-full h-full object-cover border-0 scale-105"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  )}
 
-              <div className="absolute top-2 left-2">
-                <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-surface text-fg border border-line">
-                  {detectedPlatform.toUpperCase()}
-                </span>
-              </div>
+                  {/* Top Live Player Pill */}
+                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md text-[9px] font-black uppercase text-white border border-white/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    <span>Live Player</span>
+                  </div>
 
-              <div className="absolute bottom-0 inset-x-0 p-3 space-y-1">
-                <span className="px-1.5 py-0.5 rounded bg-surface2 text-[9px] font-bold text-muted capitalize border border-line">
-                  {category}
-                </span>
-                <p className="text-xs font-bold text-white line-clamp-2">
-                  {title || "Your viral clip headline preview will appear here"}
-                </p>
-                <div className="flex items-center gap-1.5 pt-1 text-[10px] text-zinc-300 border-t border-white/10">
-                  <span className="truncate">{user?.name || "You"}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMode("thumbnail")}
+                    className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full bg-black/80 hover:bg-black text-[9px] font-bold text-white/90 border border-white/20 transition-colors"
+                  >
+                    Card View
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={
+                      thumbnailUrl ||
+                      (detectedPlatform === "tiktok"
+                        ? "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80"
+                        : detectedPlatform === "instagram"
+                        ? "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80"
+                        : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80")
+                    }
+                    alt="Preview"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/45 pointer-events-none" />
+
+                  {/* Top platform badge */}
+                  <div className="absolute top-2.5 left-2.5 z-10">
+                    <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-surface/90 text-fg border border-line backdrop-blur-md shadow-sm">
+                      {detectedPlatform.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Center Play Button Overlay */}
+                  {previewInfo.previewUrl && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode("player")}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/75 hover:bg-black/95 text-white border border-white/30 text-xs font-black uppercase tracking-wider backdrop-blur-md transition-all active:scale-95 shadow-xl group-hover:scale-110"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Play Live Preview</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bottom details overlay */}
+                  <div className="absolute bottom-0 inset-x-0 p-3 space-y-1.5 z-10 pointer-events-none">
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded bg-surface2/90 text-[9px] font-bold text-muted capitalize border border-line backdrop-blur-md">
+                        {category}
+                      </span>
+                      {sourceTag && (
+                        <span className="text-[9px] text-zinc-300 font-medium truncate max-w-[100px]">
+                          via {sourceTag}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-black text-white line-clamp-2 leading-tight drop-shadow-sm">
+                      {title || "Your viral clip headline preview will appear here"}
+                    </p>
+                    <div className="flex items-center gap-1.5 pt-1 text-[10px] text-zinc-300 border-t border-white/10">
+                      <span className="truncate font-semibold">@{user?.nickname || user?.name || "You"}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* QUICK THUMBNAIL PRESETS */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] font-bold text-muted uppercase tracking-wider block text-center sm:text-left">
+              Quick Thumbnail Presets
+            </span>
+            <div className="grid grid-cols-4 gap-1.5 text-[9px]">
+              <button
+                type="button"
+                onClick={() =>
+                  setThumbnailUrl("https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80")
+                }
+                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
+                title="TikTok Viral Cover"
+              >
+                TikTok
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setThumbnailUrl("https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80")
+                }
+                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
+                title="Instagram Reel Cover"
+              >
+                Reel
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setThumbnailUrl("https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80")
+                }
+                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
+                title="Gaming Neon Cover"
+              >
+                Gaming
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setThumbnailUrl("https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80")
+                }
+                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
+                title="Streamer Live Cover"
+              >
+                Streamer
+              </button>
             </div>
           </div>
 

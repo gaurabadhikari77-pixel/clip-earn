@@ -178,6 +178,10 @@ export async function fetchVideoMetadata(rawUrl: string): Promise<ParsedVideoInf
       if (ytId) title = `YouTube Clip #${ytId}`;
     }
   } else if (platform === "tiktok") {
+    const tiktokId = extractTikTokId(trimmed);
+    title = tiktokId ? `Trending TikTok Clip #${tiktokId.slice(-4)}` : "Trending TikTok Clip";
+    thumbnailUrl = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80";
+
     try {
       const oembedRes = await fetch(
         `https://www.tiktok.com/oembed?url=${encodeURIComponent(trimmed)}`,
@@ -187,17 +191,12 @@ export async function fetchVideoMetadata(rawUrl: string): Promise<ParsedVideoInf
         const data = await oembedRes.json();
         if (data.title) title = data.title;
         if (data.thumbnail_url) thumbnailUrl = data.thumbnail_url;
-      } else {
-        title = "Trending TikTok Clip";
-        thumbnailUrl = "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80";
       }
-    } catch {
-      title = "Trending TikTok Clip";
-      thumbnailUrl = "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80";
-    }
+    } catch {}
   } else if (platform === "instagram") {
-    title = "Instagram Reel Clip";
-    thumbnailUrl = "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&auto=format&fit=crop&q=80";
+    const shortcode = extractInstagramShortcode(trimmed);
+    title = shortcode ? `Instagram Reel #${shortcode}` : "Instagram Reel Clip";
+    thumbnailUrl = "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80";
   }
 
   return {
