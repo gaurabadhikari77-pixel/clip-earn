@@ -216,64 +216,24 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
                       </p>
                     </div>
 
-                    {/* ROLE SWITCHER TESTER */}
-                    <div className="space-y-1 mb-2">
-                      <p className="px-2 pt-1 text-[9px] uppercase font-bold tracking-wider text-muted">
-                        Switch Persona (Live Demo)
-                      </p>
-                      <button
-                        onClick={() => {
-                          switchUserPersona("owner");
-                          setRoleMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
-                          user?.role === "owner"
-                            ? "bg-warning/15 text-warning font-bold border border-warning/30"
-                            : "hover:bg-surface2 text-muted hover:text-fg"
-                        }`}
+                    {/* VIP UPGRADE LINK (Redirects to Instagram profile) */}
+                    <div className="py-1 border-b border-line mb-1">
+                      <a
+                        href="https://www.instagram.com/gaurabb_adk/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setRoleMenuOpen(false)}
+                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 text-pink-400 font-bold border border-pink-500/20 transition-colors"
                       >
                         <span className="flex items-center gap-1.5">
-                          <Crown className="w-3.5 h-3.5 text-warning" /> Owner
+                          <Crown className="w-3.5 h-3.5 text-pink-400" />
+                          <span>Get VIP Rank</span>
                         </span>
-                        <span className="text-[10px] text-warning">Unlimited</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          switchUserPersona("vip");
-                          setRoleMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
-                          user?.role === "vip"
-                            ? "bg-accent/15 text-accent font-bold border border-accent/30"
-                            : "hover:bg-surface2 text-muted hover:text-fg"
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-accent" /> VIP
-                        </span>
-                        <span className="text-[10px] text-accent">20/day</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          switchUserPersona("user");
-                          setRoleMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors ${
-                          user?.role === "user"
-                            ? "bg-surface2 text-fg font-bold border border-line"
-                            : "hover:bg-surface2 text-muted hover:text-fg"
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-fg" /> Normal Clipper
-                        </span>
-                        <span className="text-[10px] text-muted">1/day</span>
-                      </button>
+                        <span className="text-[10px] text-pink-400/80">DM Instagram &rarr;</span>
+                      </a>
                     </div>
 
-                    <div className="pt-2 border-t border-line space-y-1">
+                    <div className="space-y-1">
                       <Link
                         href="/profile"
                         onClick={() => setRoleMenuOpen(false)}
@@ -288,15 +248,6 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
                       >
                         <Trophy className="w-3.5 h-3.5 text-warning" /> Leaderboard
                       </Link>
-                      {(user?.role === "owner" || user?.role === "admin") && (
-                        <Link
-                          href="/admin"
-                          onClick={() => setRoleMenuOpen(false)}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-surface2 text-warning font-bold"
-                        >
-                          <Shield className="w-3.5 h-3.5" /> Admin Panel
-                        </Link>
-                      )}
                       <button
                         onClick={() => {
                           setRoleMenuOpen(false);

@@ -28,7 +28,7 @@ declare global {
   } | undefined;
 }
 
-const STORAGE_KEY = "clipearn_local_store_v5";
+const STORAGE_KEY = "clipearn_local_store_v6";
 
 export function saveStore() {
   if (typeof window !== "undefined" && global.__CLIPEARN_STORE__) {
@@ -47,21 +47,14 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
         localStorage.removeItem("clipearn_local_store_v2");
         localStorage.removeItem("clipearn_local_store_v3");
         localStorage.removeItem("clipearn_local_store_v4");
+        localStorage.removeItem("clipearn_local_store_v5");
 
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed && Array.isArray(parsed.videos)) {
-            // Strip any remaining legacy seed video IDs
-            parsed.videos = parsed.videos.filter(
-              (v: Video) =>
-                !v.id.startsWith("vid_owner_") &&
-                !v.id.startsWith("vid_pinned_") &&
-                !v.id.startsWith("vid_vip_") &&
-                !v.id.startsWith("vid_fresh_") &&
-                !v.id.startsWith("vid_comm_") &&
-                !v.id.startsWith("vid_watch_")
-            );
+          if (parsed) {
+            // Guarantee array
+            if (!Array.isArray(parsed.videos)) parsed.videos = [];
             global.__CLIPEARN_STORE__ = parsed;
             return global.__CLIPEARN_STORE__!;
           }
@@ -70,7 +63,7 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
     }
 
     global.__CLIPEARN_STORE__ = {
-      videos: [...seedAllClips],
+      videos: [],
       users: [...sampleUsers],
       settings: { ...initialSettings },
       engagements: [],
@@ -180,6 +173,13 @@ export const db = {
     const store = getStore();
     const user = store.users.find((u) => u.id === id);
     if (user) {
+      if (isOwnerEmail(user.email)) {
+        user.role = "owner";
+        user.credits = 9999;
+        user.postCredits = 9999;
+        user.dailyLimitOverride = -1;
+        user.customDailyLimit = -1;
+      }
       this.checkAndExpireVip(user);
     }
     return user;
@@ -190,6 +190,13 @@ export const db = {
     const store = getStore();
     const user = store.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (user) {
+      if (isOwnerEmail(user.email)) {
+        user.role = "owner";
+        user.credits = 9999;
+        user.postCredits = 9999;
+        user.dailyLimitOverride = -1;
+        user.customDailyLimit = -1;
+      }
       this.checkAndExpireVip(user);
     }
     return user;
@@ -284,6 +291,9 @@ export const db = {
     const store = getStore();
     const user = store.users.find((u) => u.id === userId);
     if (!user) return false;
+    if (isOwnerEmail(user.email) && role !== "owner") {
+      return false;
+    }
     user.role = role;
     if (role === "owner") {
       user.dailyLimitOverride = -1;

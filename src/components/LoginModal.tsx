@@ -7,11 +7,10 @@ import { firebaseDb } from "@/lib/firebase-db";
 import { useApp } from "@/context/AppContext";
 import { siteConfig } from "@/config/site";
 import { clientApi } from "@/lib/client-api";
-import { X, ShieldCheck, Sparkles, Crown, Star, User, ChevronDown } from "lucide-react";
+import { X, ShieldCheck, Sparkles } from "lucide-react";
 
 export function LoginModal() {
   const { isLoginModalOpen, closeLoginModal, showToast, refreshUserData, setUser } = useApp();
-  const [showDevAccounts, setShowDevAccounts] = useState(false);
   const [customEmail, setCustomEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,22 +61,24 @@ export function LoginModal() {
       if (err.code === "auth/popup-closed-by-user") {
         // User voluntarily closed popup
       } else if (err.code === "auth/unauthorized-domain") {
-        showToast("Domain not authorized in Firebase Console. Use Dev Login or add localhost to authorized domains.", "error");
+        showToast("Domain not authorized in Firebase Console. Please sign in with your email address below.", "error");
       } else {
-        showToast(err.message || "Could not sign in with Google. You can use Dev login below.", "error");
+        showToast(err.message || "Could not sign in with Google. You can sign in with your email address below.", "error");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleQuickLogin = async (email: string, name?: string, role?: string) => {
+  const handleEmailLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!customEmail.trim()) return;
     setIsLoading(true);
     try {
+      const email = customEmail.trim();
       const data = await clientApi.upsertUser({
         email,
-        name: name || email.split("@")[0],
-        role: role as any,
+        name: email.split("@")[0],
       });
 
       setUser(data.user);
@@ -85,7 +86,6 @@ export function LoginModal() {
         localStorage.setItem("clipearn_userId", data.user.id);
       }
 
-      // Sync into Firebase Firestore
       await firebaseDb.upsertUser({
         id: data.user.id,
         email: data.user.email,
@@ -100,7 +100,7 @@ export function LoginModal() {
         createdAt: data.user.createdAt,
       });
 
-      showToast(`Signed in as ${data.user.role.toUpperCase()} (${data.user.name})`, "success");
+      showToast(`Signed in as ${data.user.name}${data.user.role === "owner" ? " (Platform Owner)" : ""}`, "success");
       closeLoginModal();
       await refreshUserData();
     } catch (err: any) {
@@ -206,85 +206,37 @@ export function LoginModal() {
             </p>
           </div>
 
-          {/* Dev Quick Test Accounts Accordion */}
-          <div className="mt-5 pt-4 border-t border-line">
-            <button
-              onClick={() => setShowDevAccounts((prev) => !prev)}
-              type="button"
-              className="w-full flex items-center justify-between text-xs text-muted hover:text-fg transition-colors"
-            >
-              <span>Development / Test Personas</span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${
-                  showDevAccounts ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {showDevAccounts && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-3 space-y-2 pt-1"
+          {/* Clean Email Login */}
+          <div className="mt-5 pt-4 border-t border-line space-y-3">
+            <div className="flex items-center justify-between text-xs text-muted">
+              <span>Or sign in with email</span>
+              <a
+                href="https://www.instagram.com/gaurabb_adk/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-pink-400 hover:text-pink-300 font-semibold text-[11px]"
               >
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    onClick={() => handleQuickLogin("iamdeathflow11@gmail.com", "Admin (iamdeathflow11)", "owner")}
-                    disabled={isLoading}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 text-left transition-colors"
-                  >
-                    <Crown className="w-3.5 h-3.5 text-warning shrink-0" />
-                    <span className="truncate">Admin (iamdeathflow11)</span>
-                  </button>
+                Need VIP? Contact Owner &rarr;
+              </a>
+            </div>
 
-                  <button
-                    onClick={() => handleQuickLogin("sarah.clips@example.com", "Sarah Edits (VIP)", "vip")}
-                    disabled={isLoading}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 text-left transition-colors"
-                  >
-                    <Star className="w-3.5 h-3.5 text-accent shrink-0" />
-                    <span className="truncate">VIP Login</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickLogin("alex.cliper@gmail.com", "Alex Clipper", "user")}
-                    disabled={isLoading}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface2 hover:bg-line text-fg border border-line text-left transition-colors"
-                  >
-                    <User className="w-3.5 h-3.5 text-muted shrink-0" />
-                    <span className="truncate">Normal User</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleQuickLogin(`newbie_${Date.now()}@gmail.com`, "New Clipper", "user")}
-                    disabled={isLoading}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success/10 hover:bg-success/20 text-success border border-success/20 text-left transition-colors"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-success shrink-0" />
-                    <span className="truncate">Fresh New User</span>
-                  </button>
-                </div>
-
-                {/* Custom Email input */}
-                <div className="flex gap-1.5 mt-2">
-                  <input
-                    type="email"
-                    placeholder="or enter any email..."
-                    value={customEmail}
-                    onChange={(e) => setCustomEmail(e.target.value)}
-                    className="flex-1 bg-surface2 border border-line rounded-lg px-2.5 py-1.5 text-xs text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
-                  />
-                  <button
-                    onClick={() => customEmail && handleQuickLogin(customEmail)}
-                    disabled={!customEmail || isLoading}
-                    className="px-3 py-1.5 bg-accent hover:opacity-90 text-accent-fg text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
-                  >
-                    Log In
-                  </button>
-                </div>
-              </motion.div>
-            )}
+            <form onSubmit={handleEmailLogin} className="flex gap-2">
+              <input
+                type="email"
+                required
+                placeholder="Enter your email address..."
+                value={customEmail}
+                onChange={(e) => setCustomEmail(e.target.value)}
+                className="flex-1 bg-surface2 border border-line rounded-xl px-3 py-2 text-xs text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={!customEmail.trim() || isLoading}
+                className="px-4 py-2 bg-accent hover:opacity-90 text-accent-fg text-xs font-semibold rounded-xl disabled:opacity-50 transition-opacity whitespace-nowrap"
+              >
+                Sign In
+              </button>
+            </form>
           </div>
         </motion.div>
       </div>

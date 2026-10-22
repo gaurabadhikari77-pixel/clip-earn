@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import { auth, onAuthStateChanged, signOutUser } from "@/lib/firebase";
 import { User, Video, SiteSettings, UserRole } from "@/types";
-import { siteConfig } from "@/config/site";
+import { siteConfig, isOwnerEmail } from "@/config/site";
 import { clientApi } from "@/lib/client-api";
 
 export interface PostLimitStats {
@@ -100,6 +100,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (storedUserId) {
         const data = await clientApi.getUser(storedUserId);
         if (data.user) {
+          if (isOwnerEmail(data.user.email)) {
+            data.user.role = "owner";
+            data.user.credits = 9999;
+            data.user.postCredits = 9999;
+            if (data.limitStats) {
+              data.limitStats.isUnlimited = true;
+              data.limitStats.canPost = true;
+              data.limitStats.credits = 9999;
+            }
+          }
           setUser(data.user);
           setLimitStats(data.limitStats);
           return;
@@ -130,6 +140,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             name: fbUser.displayName || fbUser.email.split("@")[0],
             avatar: fbUser.photoURL || undefined,
           });
+          if (isOwnerEmail(data.user.email)) {
+            data.user.role = "owner";
+            data.user.credits = 9999;
+            data.user.postCredits = 9999;
+            if (data.limitStats) {
+              data.limitStats.isUnlimited = true;
+              data.limitStats.canPost = true;
+              data.limitStats.credits = 9999;
+            }
+          }
           setUser(data.user);
           setLimitStats(data.limitStats);
           if (typeof window !== "undefined") {
@@ -189,11 +209,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Persona switch helper for instant role testing
   const switchUserPersona = useCallback(
     async (role: UserRole | "custom", customEmail?: string) => {
+      // Non-owners are strictly prevented from changing levels
+      if (!user?.email || !isOwnerEmail(user.email)) {
+        if (typeof window !== "undefined") {
+          window.open("https://www.instagram.com/gaurabb_adk/", "_blank", "noopener,noreferrer");
+        }
+        showToast("Level switching is restricted to the platform owner. Contact @gaurabb_adk on Instagram to upgrade.", "info");
+        return;
+      }
+
       let targetEmail = customEmail || "user@example.com";
       let name = "Clipper User";
 
       if (role === "owner") {
-        targetEmail = siteConfig.ownerEmails[0] || "owner@clipearn.com";
+        targetEmail = siteConfig.ownerEmails[0] || "iamdeathflow11@gmail.com";
         name = "ClipEarn Owner";
       } else if (role === "vip") {
         targetEmail = "sarah.clips@example.com";
@@ -219,7 +248,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         showToast("Error switching user persona", "error");
       }
     },
-    [showToast]
+    [user, showToast]
   );
 
   const triggerRewardMoment = useCallback(() => {

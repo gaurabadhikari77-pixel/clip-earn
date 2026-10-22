@@ -10,10 +10,11 @@ import { signInWithGoogle } from "@/lib/firebase";
 import { firebaseDb } from "@/lib/firebase-db";
 import { useApp } from "@/context/AppContext";
 import { siteConfig, isOwnerEmail } from "@/config/site";
+import { clientApi } from "@/lib/client-api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { switchUserPersona, showToast } = useApp();
+  const { setUser, showToast, refreshUserData } = useApp();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,16 @@ export default function LoginPage() {
     try {
       const cleanEmail = email.trim().toLowerCase();
       const isOwner = isOwnerEmail(cleanEmail);
-      await switchUserPersona(isOwner ? "owner" : "user", cleanEmail);
+      const data = await clientApi.upsertUser({
+        email: cleanEmail,
+        name: name.trim() || cleanEmail.split("@")[0],
+      });
+      setUser(data.user);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("clipearn_userId", data.user.id);
+      }
+      await firebaseDb.upsertUser(data.user);
+      await refreshUserData();
       showToast(
         isOwner
           ? "Logged in as Platform Owner (Unlimited Perks Activated)!"
@@ -47,30 +57,26 @@ export default function LoginPage() {
       const cred = await signInWithGoogle();
       const fbUser = cred.user;
       if (fbUser && fbUser.email) {
-        const res = await fetch("/api/auth/me", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: fbUser.uid,
-            email: fbUser.email,
-            name: fbUser.displayName || fbUser.email.split("@")[0],
-            avatar: fbUser.photoURL || undefined,
-          }),
+        const data = await clientApi.upsertUser({
+          id: fbUser.uid,
+          email: fbUser.email,
+          name: fbUser.displayName || fbUser.email.split("@")[0],
+          avatar: fbUser.photoURL || undefined,
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (typeof window !== "undefined") {
-            localStorage.setItem("clipearn_userId", data.user.id);
-          }
-          await firebaseDb.upsertUser(data.user);
-          showToast(`Welcome to ClipEarn, ${data.user.name}!`, "success");
-          router.push("/");
+        setUser(data.user);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("clipearn_userId", data.user.id);
         }
+        await firebaseDb.upsertUser(data.user);
+        await refreshUserData();
+        showToast(`Welcome to ClipEarn, ${data.user.name}!`, "success");
+        router.push("/");
       }
     } catch (err: any) {
       if (err.code !== "auth/popup-closed-by-user") {
         showToast(err.message || "Could not start Google sign in.", "error");
       }
+    } finally {
       setLoading(false);
     }
   };

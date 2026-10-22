@@ -27,9 +27,19 @@ import { useApp } from "@/context/AppContext";
 import { Video, User, Report, SiteSettings, UserRole } from "@/types";
 import { clientApi } from "@/lib/client-api";
 import { db } from "@/lib/store";
+import { isOwnerEmail } from "@/config/site";
 
 export default function AdminPage() {
   const { user, showToast, refreshSettings } = useApp();
+
+  useEffect(() => {
+    if (!user || !isOwnerEmail(user.email)) {
+      if (typeof window !== "undefined") {
+        window.location.href = "https://www.instagram.com/gaurabb_adk/";
+      }
+    }
+  }, [user]);
+
   const [activeTab, setActiveTab] = useState<
     "overview" | "owner-videos" | "videos" | "users" | "reports" | "settings"
   >("overview");
@@ -177,6 +187,28 @@ export default function AdminPage() {
       showToast("Error saving settings", "error");
     }
   };
+
+  if (!user || !isOwnerEmail(user.email)) {
+    return (
+      <div className="w-full min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-warning/10 border border-warning/20 text-warning flex items-center justify-center">
+          <Shield className="w-6 h-6" />
+        </div>
+        <h2 className="text-xl font-bold text-fg">Owner Access Restricted</h2>
+        <p className="text-xs text-muted max-w-md">
+          Only the owner (iamdeathflow11@gmail.com) can access this control center. Redirecting...
+        </p>
+        <a
+          href="https://www.instagram.com/gaurabb_adk/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-accent font-semibold underline"
+        >
+          Click here to contact Owner on Instagram (@gaurabb_adk)
+        </a>
+      </div>
+    );
+  }
 
   const isOwner = user?.role === "owner";
 

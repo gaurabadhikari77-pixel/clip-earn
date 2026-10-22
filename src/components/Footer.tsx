@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Scissors, Play, Heart, Shield, Sparkles } from "lucide-react";
+import { Scissors, Play, Heart, Sparkles } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { AdSlot } from "./AdSlot";
 
@@ -94,24 +94,19 @@ export function Footer() {
                   <span>Instagram: @gaurabb_adk</span>
                 </a>
               </li>
-              <li>
-                <Link href="/admin" className="text-warning hover:opacity-80 transition-opacity flex items-center gap-1">
-                  <Shield className="w-3 h-3" /> Admin Portal
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
 
-        {/* SEO ECOSYSTEM & KEYWORD CLUSTER: Whop Clipster, Noisy.la, Content Rewards */}
+        {/* ECOSYSTEM & VALUE PROPOSITION */}
         <div className="py-8 border-t border-line space-y-4">
           <div className="space-y-1">
             <h5 className="text-xs font-bold uppercase tracking-wider text-fg flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-accent" />
-              <span>The Premier Content Reward Platform for Short-Form Clippers</span>
+              <span>Real Views & Algorithmic Engagement for Short-Form Clippers</span>
             </h5>
             <p className="text-xs text-muted leading-relaxed max-w-4xl">
-              ClipEarn is the open community alternative to platforms like <strong>Whop Clipster</strong>, <strong>Whop Video Rewards</strong>, and <strong>Noisy.la</strong>. Rather than paying expensive subscriptions or dealing with inactive bot networks, ClipEarn empowers video clippers to exchange authentic watch time, earn post credits, and accelerate organic algorithmic reach across TikTok, YouTube Shorts, and Instagram Reels.
+              ClipEarn helps clippers, stream editors, and video creators get genuine views, high retention signals, and real algorithmic momentum across TikTok, YouTube Shorts, and Instagram Reels. By connecting clippers in a transparent watch-and-earn ecosystem, every creator gets noticed and rewarded fairly.
             </p>
           </div>
 
@@ -119,13 +114,10 @@ export function Footer() {
             <span className="text-muted font-bold text-[10px] uppercase tracking-wider">Related Topics:</span>
             {[
               "Content Reward",
-              "Whop Clipster",
-              "Whop Alternative",
-              "Clipster Video Exchange",
-              "Noisy.la Alternative",
-              "Noisy Clip Farm",
+              "Real Video Views",
+              "Genuine Engagement",
               "TikTok Clippers",
-              "YouTube Shorts Views",
+              "YouTube Shorts Reach",
               "Instagram Reels Growth",
               "Stream Clippers (Twitch & Kick)",
               "Clipper Rewards",
@@ -133,6 +125,7 @@ export function Footer() {
               "Short Form Video Exchange",
               "Viral Clips Boost",
               "Organic View Exchange",
+              "Algorithm Watch-Time Booster",
             ].map((tag) => (
               <span
                 key={tag}

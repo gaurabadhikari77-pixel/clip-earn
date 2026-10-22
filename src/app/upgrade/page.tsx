@@ -88,14 +88,17 @@ export default function UpgradePage() {
       // Fallback for static hosting (GitHub Pages)
     }
 
-    // Direct simulation on GitHub Pages
+    // Redirect to owner's Instagram for VIP upgrade and pins
     if (type === "vip") {
-      db.updateUserRole(user.id, "vip");
-      await refreshUserData();
-      showToast("Upgraded to VIP Creator! 20 posts per day unlocked.", "success");
-    } else if (type === "pin" && selectedPinVideoId) {
-      db.pinVideo(selectedPinVideoId, 24);
-      showToast("Clip pinned to Spotlight for 24 hours!", "success");
+      if (typeof window !== "undefined") {
+        window.location.href = "https://www.instagram.com/gaurabb_adk/";
+      }
+      return;
+    } else if (type === "pin") {
+      if (typeof window !== "undefined") {
+        window.location.href = "https://www.instagram.com/gaurabb_adk/";
+      }
+      return;
     }
     setLoadingType(null);
   };

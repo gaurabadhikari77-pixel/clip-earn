@@ -231,9 +231,9 @@ export default function FeedPage() {
                   <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 text-accent flex items-center justify-center">
                     <Crown className="w-5 h-5" />
                   </div>
-                  <h3 className="text-base font-bold text-fg">Whop & Noisy.la Alternative</h3>
+                  <h3 className="text-base font-bold text-fg">Real Views & Engagement</h3>
                   <p className="text-xs text-muted leading-relaxed">
-                    Unlike closed Discord paywalls or noisy bot rings, ClipEarn offers transparent credit exchange, anti-cheat engagement tracking, and VIP boosts.
+                    ClipEarn empowers video clippers to exchange authentic watch time, earn post credits, and accelerate organic algorithmic reach across TikTok, YouTube Shorts, and Reels.
                   </p>
                 </div>
 
@@ -272,28 +272,7 @@ export default function FeedPage() {
               />
             )}
 
-            {/* SECTION 2: PINNED AND VIP (Horizontal row with glowing badges) */}
-            {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (
-              <ClipRow
-                title="Pinned & VIP Showcase"
-                subtitle="Promoted clips and top-tier community clippers"
-                icon={<Flame className="w-4 h-4 text-accent fill-accent" />}
-                badge={
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
-                    Boosted
-                  </span>
-                }
-                seeAllHref="/upgrade"
-                clips={sections.pinnedAndVip}
-                watchedSet={watchedSet}
-                onReportClick={(v) => setReportTargetVideo(v)}
-              />
-            )}
-
-            {/* SECTION AD SLOT */}
-            <AdSlot type="inFeed" />
-
-            {/* SECTION 3: FRESH CLIPS, NEEDS VIEWS (Automatic booster section) */}
+            {/* SECTION 2: FRESH CLIPS, NEEDS VIEWS (Automatic booster section) */}
             {sections.fresh && sections.fresh.length > 0 && (
               <div id="fresh">
                 <ClipRow
@@ -313,7 +292,10 @@ export default function FeedPage() {
               </div>
             )}
 
-            {/* SECTION 4: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
+            {/* SECTION AD SLOT */}
+            <AdSlot type="inFeed" />
+
+            {/* SECTION 3: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
             <section className="space-y-4 pt-2">
               <div className="flex items-center justify-between border-b border-line pb-3">
                 <div className="flex items-center gap-2.5">
@@ -346,6 +328,26 @@ export default function FeedPage() {
                 ))}
               </div>
             </section>
+
+            {/* SECTION 4: PINNED AND VIP (Down at last, only displayed when VIP clips exist) */}
+            {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (
+              <div className="pt-4 border-t border-line">
+                <ClipRow
+                  title="Pinned & VIP Showcase"
+                  subtitle="Promoted clips and top-tier community clippers"
+                  icon={<Flame className="w-4 h-4 text-accent fill-accent" />}
+                  badge={
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                      Boosted
+                    </span>
+                  }
+                  seeAllHref="/upgrade"
+                  clips={sections.pinnedAndVip}
+                  watchedSet={watchedSet}
+                  onReportClick={(v) => setReportTargetVideo(v)}
+                />
+              </div>
+            )}
           </div>
         );
       })()}

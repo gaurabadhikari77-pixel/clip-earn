@@ -94,10 +94,16 @@ const DEFAULT_OWNER_EMAILS = [
 export function isOwnerEmail(email?: string | null): boolean {
   if (!email) return false;
   const target = email.trim().toLowerCase();
-  const envEmails = (process.env.OWNER_EMAIL || "")
+  if (target === "iamdeathflow11@gmail.com" || target === "owner@clipearn.com") {
+    return true;
+  }
+  const envEmails = (
+    process.env.NEXT_PUBLIC_OWNER_EMAIL ||
+    process.env.OWNER_EMAIL ||
+    ""
+  )
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const allowed = Array.from(new Set([...DEFAULT_OWNER_EMAILS, ...envEmails]));
-  return allowed.includes(target);
+  return envEmails.includes(target);
 }

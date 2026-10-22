@@ -24,11 +24,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ClipEarn — #1 Content Reward Platform for Clippers | Whop Clipster & Noisy.la Alternative",
+    default: "ClipEarn — #1 Content Reward Platform | Helping Clippers Get Views & Engagement",
     template: "%s | ClipEarn — Content Reward Platform",
   },
   description:
-    "ClipEarn is the premier community-driven content reward and clipper video exchange platform. The leading alternative to Whop Clipster and Noisy.la. Support fellow video creators, earn post credits, and explode your short-form reach across TikTok, YouTube Shorts, and Instagram Reels.",
+    "ClipEarn helps video clippers get authentic views, watch time, and genuine engagement. Support fellow video creators, earn post credits, and explode your short-form reach across TikTok, YouTube Shorts, and Instagram Reels.",
   keywords: [
     "content reward",
     "whop",
@@ -80,15 +80,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://gaurabadhikari77-pixel.github.io/clip-earn/",
     siteName: "ClipEarn",
-    title: "ClipEarn — #1 Content Reward Platform for Clippers | Whop Clipster & Noisy.la Alternative",
+    title: "ClipEarn — Helping Video Clippers Get Views & Engagement",
     description:
-      "Support fellow video creators, exchange authentic watch time, earn post credits, and explode your short-form reach on TikTok, YouTube Shorts, and Reels. Transparent alternative to Whop Clipster and Noisy.la.",
+      "Support fellow video creators, exchange authentic watch time, earn post credits, and explode your short-form reach on TikTok, YouTube Shorts, and Reels.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ClipEarn — Content Reward Platform for Short-Form Clippers",
     description:
-      "Community video exchange with real watch time and verified credits. The leading alternative to Whop Clipster and Noisy.la.",
+      "Community video exchange with real watch time and verified credits. Helps clippers get authentic views and engagement.",
     creator: "@clipearn",
   },
   alternates: {
@@ -107,7 +107,7 @@ const jsonLd = {
       "applicationCategory": "MultimediaApplication",
       "operatingSystem": "Web Browser",
       "description":
-        "ClipEarn is the premier content reward platform and video exchange for short-form clippers across TikTok, YouTube Shorts, and Instagram Reels, offering a transparent alternative to Whop Clipster and Noisy.la.",
+        "ClipEarn helps video clippers get authentic views, genuine engagement, and organic reach across TikTok, YouTube Shorts, and Instagram Reels through community content rewards.",
       "offers": {
         "@type": "Offer",
         "price": "0",

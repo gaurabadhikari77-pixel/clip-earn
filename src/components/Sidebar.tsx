@@ -10,7 +10,6 @@ import {
   Trophy,
   Crown,
   User,
-  Shield,
   Zap,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
@@ -27,10 +26,6 @@ export function Sidebar() {
     { label: "VIP Upgrade", href: "/upgrade", icon: Crown, vip: true },
     { label: "My Profile", href: "/profile", icon: User },
   ];
-
-  if (user?.role === "owner" || user?.role === "admin") {
-    navItems.push({ label: "Admin Panel", href: "/admin", icon: Shield });
-  }
 
   return (
     <>
