@@ -89,8 +89,8 @@ export default function UploadPage() {
       return;
     }
 
-    if (!isOwner && userCredits <= 0) {
-      setErrorMsg("You need at least 1 post credit. Watch and support a clip on the feed to earn 1 credit!");
+    if (!isOwner && userCredits < 1.5) {
+      setErrorMsg("You need at least 1.5 post credits to upload a clip. Watch and support clips on the feed to earn credits!");
       return;
     }
 
@@ -169,7 +169,7 @@ export default function UploadPage() {
             <div>
               <p className="text-xs font-bold text-fg">Sign In Required to Upload</p>
               <p className="text-[11px] text-muted">
-                Continue with Google to get 2 initial post credits and start uploading clips.
+                Continue with Google to get 1.5 initial post credits (1 free upload) and start uploading clips.
               </p>
             </div>
           </div>
@@ -187,13 +187,13 @@ export default function UploadPage() {
         {/* Credits Status */}
         <div className="p-4 rounded-2xl bg-surface border border-line flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-muted">Available Credits</span>
+            <span className="text-xs font-semibold text-muted">Available Credits (Upload costs 1.5 credits)</span>
             <p className="text-xl font-black text-fg flex items-center gap-2">
               <Coins className="w-5 h-5 text-accent" />
               {isOwner ? "Unlimited (Owner)" : `${userCredits} ${userCredits === 1 ? "Credit" : "Credits"}`}
             </p>
           </div>
-          {!isOwner && userCredits === 0 && (
+          {!isOwner && userCredits < 1.5 && (
             <Link
               href="/"
               className="px-3 py-1.5 rounded-xl bg-accent/15 border border-accent/30 text-accent font-bold text-xs hover:bg-accent/25 transition-colors"
@@ -232,7 +232,7 @@ export default function UploadPage() {
               <span className="text-[10px] font-bold text-accent">VIP Member (20 base)</span>
             )}
             {user?.role === "user" && (
-              <span className="text-[10px] font-bold text-muted">Base: 5 / day</span>
+              <span className="text-[10px] font-bold text-muted">Base: 1 / day</span>
             )}
           </div>
 
@@ -428,7 +428,7 @@ export default function UploadPage() {
             {/* SUBMIT BUTTON */}
             <button
               type="submit"
-              disabled={submitting || limitHit || (!isOwner && userCredits <= 0)}
+              disabled={submitting || limitHit || (!isOwner && userCredits < 1.5)}
               className="w-full py-3.5 px-6 rounded-xl bg-accent text-accent-fg font-extrabold text-sm tracking-wide uppercase shadow-md hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] flex items-center justify-center gap-2"
             >
               {submitting ? (
@@ -440,7 +440,7 @@ export default function UploadPage() {
                 <>
                   <Upload className="w-4 h-4" />
                   <span>
-                    Post Clip {isOwner ? "(Owner Unlimited)" : "(Costs 1 Credit)"}
+                    Post Clip {isOwner ? "(Owner Unlimited)" : "(Costs 1.5 Credits)"}
                   </span>
                 </>
               )}

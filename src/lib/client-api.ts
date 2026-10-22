@@ -73,10 +73,14 @@ export const clientApi = {
     for (const v of videos) {
       const isWatched = watchedVideoIds.has(v.id);
 
+      // If viewer has already engaged with this video, remove it from their feed completely
+      // (Only for this viewer; other users who haven't watched it will still see it)
+      if (isWatched) {
+        continue;
+      }
+
       if (v.isOwnerVideo) {
         ownerVideos.push(v);
-      } else if (isWatched) {
-        watchedVideos.push(v);
       } else if ((v.isPinned && v.pinnedUntil && v.pinnedUntil > now) || v.userRole === "vip") {
         pinnedAndVipVideos.push(v);
       } else if (v.engagementsCount <= 2) {
@@ -97,7 +101,6 @@ export const clientApi = {
     pinnedAndVipVideos.sort(sortByDate);
     freshVideos.sort(sortByFewestEngagements);
     communityVideos.sort(sortByDate);
-    watchedVideos.sort(sortByDate);
 
     return {
       sections: {
@@ -105,7 +108,7 @@ export const clientApi = {
         pinnedAndVip: pinnedAndVipVideos,
         fresh: freshVideos,
         community: communityVideos,
-        watched: watchedVideos,
+        watched: [],
       },
       watchedVideoIds: Array.from(watchedVideoIds),
       totalCount: videos.length,
@@ -158,8 +161,8 @@ export const clientApi = {
     const limitStats = db.getUserPostLimitStats(user.id);
 
     if (!isOwner) {
-      if (limitStats.credits <= 0) {
-        throw new Error("You need at least 1 post credit to submit a clip. Watch and support a fellow creator's clip on the feed to earn a credit!");
+      if (limitStats.credits < 1.5) {
+        throw new Error("You need at least 1.5 post credits to upload a clip. Watch and support fellow creators' clips on the feed to earn credits!");
       }
 
       if (!limitStats.isUnlimited && limitStats.postsUsedToday >= limitStats.totalLimit) {
@@ -177,9 +180,9 @@ export const clientApi = {
     const finalThumbnail = thumbnailUrl?.trim() || parsed.thumbnailUrl;
     const finalPlatform = parsed.platform;
 
-    // Deduct 1 credit for normal user
+    // Deduct 1.5 credits for normal user
     if (!isOwner) {
-      db.addCredits(user.id, -1);
+      db.addCredits(user.id, -1.5);
     }
 
     const newVideo = db.addVideo({

@@ -427,6 +427,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Refresh limits & user data
       await refreshUserData();
 
+      // Notify feed to immediately remove this video for this viewer
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("clipearn_engagement_verified", {
+            detail: { videoId: activeSession.video.id },
+          })
+        );
+      }
+
       return { success: true, creditAwarded: data.creditAwarded, message: data.message };
     } catch (err: any) {
       showToast(err.message || "Error verifying engagement", "error");

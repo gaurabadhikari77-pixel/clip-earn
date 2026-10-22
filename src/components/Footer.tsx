@@ -85,6 +85,16 @@ export function Footer() {
                 <span>Anti-Abuse Verification</span>
               </li>
               <li>
+                <a
+                  href="https://www.instagram.com/gaurabb_adk/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-pink-400 hover:text-pink-300 font-semibold transition-colors flex items-center gap-1"
+                >
+                  <span>Instagram: @gaurabb_adk</span>
+                </a>
+              </li>
+              <li>
                 <Link href="/admin" className="text-warning hover:opacity-80 transition-opacity flex items-center gap-1">
                   <Shield className="w-3 h-3" /> Admin Portal
                 </Link>

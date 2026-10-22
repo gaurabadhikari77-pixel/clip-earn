@@ -28,7 +28,7 @@ declare global {
   } | undefined;
 }
 
-const STORAGE_KEY = "clipearn_local_store_v4";
+const STORAGE_KEY = "clipearn_local_store_v5";
 
 export function saveStore() {
   if (typeof window !== "undefined" && global.__CLIPEARN_STORE__) {
@@ -46,6 +46,7 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
         localStorage.removeItem("clipearn_local_store_v1");
         localStorage.removeItem("clipearn_local_store_v2");
         localStorage.removeItem("clipearn_local_store_v3");
+        localStorage.removeItem("clipearn_local_store_v4");
 
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -261,8 +262,8 @@ export const db = {
         user.avatar ||
         `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
       role: isOwner ? "owner" : (user.role || "user"),
-      credits: isOwner ? 9999 : 2,
-      postCredits: isOwner ? 9999 : 2,
+      credits: isOwner ? 9999 : 1.5,
+      postCredits: isOwner ? 9999 : 1.5,
       dailyLimitOverride: isOwner ? -1 : (user.dailyLimitOverride ?? null),
       customDailyLimit: isOwner ? -1 : (user.dailyLimitOverride ?? null),
       bonusSlotsToday: 0,
@@ -381,7 +382,7 @@ export const db = {
 
     const hasDailyRoom = isUnlimited || postsUsedToday < totalLimit;
     const userCredits = user ? (user.role === "owner" ? 9999 : (user.credits || user.postCredits || 0)) : 0;
-    const hasCredits = user ? (user.role === "owner" || userCredits > 0) : false;
+    const hasCredits = user ? (user.role === "owner" || userCredits >= 1.5) : false;
 
     const secondsUntilReset = Math.max(0, Math.floor((nextReset.getTime() - Date.now()) / 1000));
 

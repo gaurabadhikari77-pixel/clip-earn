@@ -72,6 +72,24 @@ export default function FeedPage() {
     fetchClips();
   }, [selectedCategory, selectedPlatform, user?.id]);
 
+  // Remove engaged video in real time from this viewer's feed
+  useEffect(() => {
+    const handleEngagementVerified = (e: any) => {
+      const vid = e.detail?.videoId;
+      if (!vid) return;
+      setSections((prev) => ({
+        owner: prev.owner ? prev.owner.filter((v) => v.id !== vid) : [],
+        pinnedAndVip: prev.pinnedAndVip ? prev.pinnedAndVip.filter((v) => v.id !== vid) : [],
+        fresh: prev.fresh ? prev.fresh.filter((v) => v.id !== vid) : [],
+        community: prev.community ? prev.community.filter((v) => v.id !== vid) : [],
+        watched: [],
+      }));
+    };
+
+    window.addEventListener("clipearn_engagement_verified", handleEngagementVerified);
+    return () => window.removeEventListener("clipearn_engagement_verified", handleEngagementVerified);
+  }, []);
+
   const watchedSet = useMemo(() => new Set(watchedIds), [watchedIds]);
 
   const categories = [
@@ -328,44 +346,6 @@ export default function FeedPage() {
                 ))}
               </div>
             </section>
-
-            {/* WATCHED CLIPS (Moved to bottom of feed, never hidden) */}
-            {sections.watched && sections.watched.length > 0 && (
-              <section className="space-y-4 pt-8 border-t border-line">
-                <div className="flex items-center justify-between pb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-xl bg-success/10 text-success">
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold text-fg">
-                        Already Watched & Supported
-                      </h2>
-                      <p className="text-xs text-muted">
-                        Clips you&apos;ve verified (credits claimed). They remain visible here.
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted font-semibold">
-                    {sections.watched.length} watched
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 opacity-75">
-                  {sections.watched.map((clip) => (
-                    <VideoCard
-                      key={clip.id}
-                      video={clip}
-                      isWatched={true}
-                      onReportClick={(v) => setReportTargetVideo(v)}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* FOOTER AD BANNER */}
-            <AdSlot type="footerBanner" />
           </div>
         );
       })()}

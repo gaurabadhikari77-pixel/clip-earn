@@ -269,7 +269,7 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
                         <span className="flex items-center gap-1.5">
                           <UserCheck className="w-3.5 h-3.5 text-fg" /> Normal Clipper
                         </span>
-                        <span className="text-[10px] text-muted">5/day</span>
+                        <span className="text-[10px] text-muted">1/day</span>
                       </button>
                     </div>
 

@@ -24,8 +24,9 @@ export const siteConfig = {
 
   // Platform Engagement Rules
   defaultMinWatchSeconds: 13,
-  defaultDailyLimitNormal: 5,
+  defaultDailyLimitNormal: 1, // Normal clipper: 1 video a day
   defaultDailyLimitVip: 20,
+  uploadCreditCost: 1.5, // 1.5 credits needed to post a video
   defaultResetHour: 6, // 6:00 AM
   defaultResetTimezone: "UTC",
 
@@ -34,7 +35,7 @@ export const siteConfig = {
   ownerBonus: {
     slotsPerOwnerClip: 2, // +2 extra post slots per verified owner clip
     creditsPerOwnerClip: 2, // +2 free post credits per verified owner clip
-    maxBonusSlotsNormal: 5, // Normal users can reach max 5 base + 5 bonus = 10 posts/day
+    maxBonusSlotsNormal: 5, // Normal users can reach max 1 base + 5 bonus = 6 posts/day
     maxBonusSlotsVip: 10, // VIP users can reach max 20 base + 10 bonus = 30 posts/day
   },
 
@@ -46,6 +47,7 @@ export const siteConfig = {
   links: {
     community: "https://discord.gg/clipearn",
     twitter: "https://twitter.com/clipearn",
+    instagram: "https://www.instagram.com/gaurabb_adk/",
   },
 
   platforms: [
