@@ -60,9 +60,26 @@ export const clientApi = {
       );
     }
 
-    const watchedVideoIds = new Set(
-      userId ? db.getUserEngagements(userId).map((e) => e.videoId) : []
-    );
+    let activeUserId = userId;
+    if (!activeUserId && typeof window !== "undefined") {
+      activeUserId = localStorage.getItem("clipearn_userId") || undefined;
+    }
+
+    const localWatchedIds: string[] = [];
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("clipearn_watched_videos");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) localWatchedIds.push(...parsed);
+        }
+      } catch {}
+    }
+
+    const watchedVideoIds = new Set([
+      ...(activeUserId ? db.getUserEngagements(activeUserId).map((e) => e.videoId) : []),
+      ...localWatchedIds,
+    ]);
 
     const now = new Date().toISOString();
     const ownerVideos: Video[] = [];

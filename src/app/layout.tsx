@@ -136,6 +136,8 @@ export default function RootLayout({
       <head>
         {/* Instant Theme Script before first paint to eliminate FOUT (flash of wrong theme) */}
         <script
+          id="theme-init"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
@@ -164,11 +166,14 @@ export default function RootLayout({
         />
         {/* Structured Data: JSON-LD for rich SEO indexing */}
         <script
+          id="ld-json-schema"
           type="application/ld+json"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-bg text-fg flex flex-col font-sans selection:bg-accent/30 selection:text-fg pb-16 lg:pb-0`}
       >
         <AuthProvider>

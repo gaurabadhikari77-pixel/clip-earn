@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -54,27 +54,60 @@ export default function FeedPage() {
   });
 
   const [watchedIds, setWatchedIds] = useState<string[]>([]);
+  const userRef = useRef(user);
 
-  const fetchClips = async () => {
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const fetchClips = useCallback(async () => {
     try {
       setLoading(true);
+      const activeUserId =
+        userRef.current?.id ||
+        (typeof window !== "undefined" ? localStorage.getItem("clipearn_userId") : null);
+
       const data = await clientApi.getVideos({
         platform: selectedPlatform !== "all" ? selectedPlatform : undefined,
         category: selectedCategory !== "all" ? selectedCategory : undefined,
-        userId: user?.id,
+        userId: activeUserId || undefined,
       });
-      setSections(data.sections || {});
-      setWatchedIds(data.watchedVideoIds || []);
+
+      // Retrieve locally tracked watched clips
+      let localWatched: string[] = [];
+      if (typeof window !== "undefined") {
+        try {
+          localWatched = JSON.parse(localStorage.getItem("clipearn_watched_videos") || "[]");
+        } catch {}
+      }
+
+      const allWatched = new Set([
+        ...(data.watchedVideoIds || []),
+        ...localWatched,
+      ]);
+      setWatchedIds(Array.from(allWatched));
+
+      // STRICT GUARANTEE: Filter out watched clips from all active sections
+      const filterUnwatched = (list?: Video[]) =>
+        (list || []).filter((v) => !allWatched.has(v.id));
+
+      setSections({
+        owner: filterUnwatched(data.sections?.owner),
+        pinnedAndVip: filterUnwatched(data.sections?.pinnedAndVip),
+        fresh: filterUnwatched(data.sections?.fresh),
+        community: filterUnwatched(data.sections?.community),
+        watched: data.sections?.watched || [],
+      });
     } catch (e) {
       console.error("Error loading feed clips:", e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, selectedPlatform]);
 
   useEffect(() => {
     fetchClips();
-  }, [selectedCategory, selectedPlatform, user?.id]);
+  }, [fetchClips]);
 
   // Refresh feed in real time when engagement is verified or owner updates a clip
   useEffect(() => {
@@ -85,7 +118,7 @@ export default function FeedPage() {
     window.addEventListener("clipearn_engagement_verified", handleRefresh);
     window.addEventListener("clipearn_video_updated", handleRefresh);
 
-    // 3-Minute Interval Shuffle: Refreshes active un-watched clips every 3 minutes so every clipper gets an equal chance
+    // 3-Minute Interval Shuffle: Refreshes and shuffles active un-watched clips only
     const shuffleTimer = setInterval(() => {
       fetchClips();
     }, 3 * 60 * 1000);
@@ -95,7 +128,7 @@ export default function FeedPage() {
       window.removeEventListener("clipearn_video_updated", handleRefresh);
       clearInterval(shuffleTimer);
     };
-  }, []);
+  }, [fetchClips]);
 
   const watchedSet = useMemo(() => new Set(watchedIds), [watchedIds]);
 
@@ -182,12 +215,13 @@ export default function FeedPage() {
           <div className="h-64 rounded-2xl bg-surface2 border border-line" />
         </div>
       ) : (() => {
-        const totalClips =
+        const activeClipsCount =
           (sections.owner?.length || 0) +
           (sections.pinnedAndVip?.length || 0) +
           (sections.fresh?.length || 0) +
-          (sections.community?.length || 0) +
-          (sections.watched?.length || 0);
+          (sections.community?.length || 0);
+        const watchedCount = sections.watched?.length || 0;
+        const totalClips = activeClipsCount + watchedCount;
 
         if (totalClips === 0) {
           return (
@@ -273,6 +307,89 @@ export default function FeedPage() {
           );
         }
 
+        if (activeClipsCount === 0 && watchedCount > 0) {
+          return (
+            <div className="space-y-10">
+              {/* ALL CAUGHT UP HERO CARD */}
+              <div className="w-full bg-surface border border-line rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden shadow-sm">
+                <div className="max-w-xl mx-auto space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 inline-block">
+                      All Caught Up
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-fg tracking-tight">
+                      You&apos;ve Watched All Available Clips!
+                    </h2>
+                    <p className="text-xs sm:text-sm text-muted max-w-md mx-auto leading-relaxed">
+                      You have watched and supported all clips currently in the feed! Newly posted clips will appear here automatically. Your completed clips are listed below.
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-center gap-3">
+                    <Link
+                      href="/post"
+                      className="px-5 py-3 rounded-xl bg-accent hover:opacity-95 text-accent-fg font-extrabold text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Post a Clip</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* WATCHED VIDEOS SECTION */}
+              <section className="pt-2 space-y-4">
+                <div className="flex items-center justify-between border-b border-line pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-xl bg-surface2 border border-line text-success">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black tracking-tight text-fg flex items-center gap-2">
+                        <span>Watched Videos</span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                          Completed
+                        </span>
+                      </h2>
+                      <p className="text-xs text-muted font-medium">
+                        Clips you have successfully engaged with and earned watch credits for
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1 rounded-lg border border-line">
+                    {sections.watched.length} watched
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 opacity-80 hover:opacity-100 transition-opacity">
+                  {sections.watched.map((clip) => (
+                    <VideoCard
+                      key={clip.id}
+                      video={clip}
+                      isWatched={true}
+                      onReportClick={(v) => setReportTargetVideo(v)}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              {/* REPORT VIDEO MODAL */}
+              <ReportModal
+                video={reportTargetVideo}
+                onClose={() => setReportTargetVideo(null)}
+              />
+
+              {/* PIN VIDEO MODAL */}
+              <PinVideoModal
+                isOpen={isPinModalOpen}
+                onClose={() => setIsPinModalOpen(false)}
+              />
+            </div>
+          );
+        }
+
         return (
           <div className="space-y-10">
             {/* SECTION 1: OWNER SPOTLIGHT (Horizontal row with crown badge) */}
@@ -316,48 +433,50 @@ export default function FeedPage() {
             <AdSlot type="inFeed" />
 
             {/* SECTION 3: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
-            <section className="space-y-4 pt-2">
-              <div className="flex items-center justify-between border-b border-line pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-xl bg-surface2 border border-line text-accent">
-                    <Users className="w-4 h-4" />
+            {sections.community && sections.community.length > 0 && (
+              <section className="space-y-4 pt-2">
+                <div className="flex items-center justify-between border-b border-line pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 rounded-xl bg-surface2 border border-line text-accent">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black tracking-tight text-fg">
+                        Community Clips
+                      </h2>
+                      <p className="text-xs text-muted font-medium">
+                        All clips from indie clippers across TikTok, YouTube, and Instagram
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-base sm:text-lg font-black tracking-tight text-fg">
-                      Community Clips
-                    </h2>
-                    <p className="text-xs text-muted font-medium">
-                      All clips from indie clippers across TikTok, YouTube, and Instagram
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsPinModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                      title="Pin your video for 48 hours"
+                    >
+                      <Pin className="w-3.5 h-3.5 fill-amber-400" />
+                      <span>Pin Video</span>
+                    </button>
+                    <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1.5 rounded-xl border border-line">
+                      {sections.community.length} clips
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setIsPinModalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
-                    title="Pin your video for 48 hours"
-                  >
-                    <Pin className="w-3.5 h-3.5 fill-amber-400" />
-                    <span>Pin Video</span>
-                  </button>
-                  <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1.5 rounded-xl border border-line">
-                    {sections.community?.length || 0} clips
-                  </span>
-                </div>
-              </div>
 
-              {/* RESPONSIVE VERTICAL GRID (2 on mobile up to 6 on xl) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                {sections.community?.map((clip) => (
-                  <VideoCard
-                    key={clip.id}
-                    video={clip}
-                    isWatched={false}
-                    onReportClick={(v) => setReportTargetVideo(v)}
-                  />
-                ))}
-              </div>
-            </section>
+                {/* RESPONSIVE VERTICAL GRID (2 on mobile up to 6 on xl) */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                  {sections.community.map((clip) => (
+                    <VideoCard
+                      key={clip.id}
+                      video={clip}
+                      isWatched={false}
+                      onReportClick={(v) => setReportTargetVideo(v)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* SECTION 4: PINNED AND VIP (Down at last, only displayed when VIP clips exist) */}
             {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (

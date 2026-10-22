@@ -469,8 +469,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Refresh limits & user data
       await refreshUserData();
 
-      // Notify feed to immediately remove this video for this viewer
+      // Persist to local storage watched videos so viewer never sees it refreshed in active feed
       if (typeof window !== "undefined") {
+        try {
+          const current = JSON.parse(localStorage.getItem("clipearn_watched_videos") || "[]");
+          if (!current.includes(activeSession.video.id)) {
+            current.push(activeSession.video.id);
+            localStorage.setItem("clipearn_watched_videos", JSON.stringify(current));
+          }
+        } catch {}
+
+        // Notify feed to immediately remove this video for this viewer
         window.dispatchEvent(
           new CustomEvent("clipearn_engagement_verified", {
             detail: { videoId: activeSession.video.id },

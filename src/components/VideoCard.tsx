@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play,
@@ -26,6 +26,7 @@ import { Video } from "@/types";
 import { siteConfig, isOwnerEmail } from "@/config/site";
 import { useApp } from "@/context/AppContext";
 import { clientApi } from "@/lib/client-api";
+import { getLivePreviewInfo } from "@/lib/video-parser";
 import { EditVideoModal } from "./EditVideoModal";
 
 interface VideoCardProps {
@@ -45,14 +46,47 @@ export function VideoCard({
   const { user, startEngagement, showToast } = useApp();
   const [imgError, setImgError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [showOwnerMenu, setShowOwnerMenu] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isOwner = user?.role === "owner" || (user?.email && isOwnerEmail(user.email));
 
   const platformInfo =
     siteConfig.platforms.find((p) => p.id === video.platform) ||
     siteConfig.platforms[siteConfig.platforms.length - 1];
+
+  const previewInfo = useMemo(() => {
+    return getLivePreviewInfo(video.url, video.platform);
+  }, [video.url, video.platform]);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (previewInfo.previewUrl && !isWatched) {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = setTimeout(() => {
+        setIsPlayingPreview(true);
+      }, 350);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setIsPlayingPreview(false);
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -178,8 +212,8 @@ export function VideoCard({
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 350, damping: 25 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       className={`group relative flex-shrink-0 cursor-pointer rounded-2xl overflow-hidden border select-none transition-all duration-200 ${
         video.isOwnerVideo
@@ -212,6 +246,40 @@ export function VideoCard({
             <span className="text-[10px] text-muted font-bold uppercase tracking-wider line-clamp-2">
               {video.category || "Clip"}
             </span>
+          </div>
+        )}
+
+        {/* LIVE THUMBNAIL PREVIEW (YouTube, TikTok, Instagram Reels, MP4) */}
+        {isPlayingPreview && previewInfo.previewUrl && (
+          <div className="absolute inset-0 z-10 bg-black overflow-hidden pointer-events-none transition-opacity duration-300">
+            {previewInfo.type === "video" ? (
+              <video
+                src={previewInfo.previewUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover pointer-events-none"
+              />
+            ) : (
+              <iframe
+                src={previewInfo.previewUrl}
+                title={video.title}
+                className="w-full h-full object-cover pointer-events-none border-0 scale-105"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            )}
+
+            {/* LIVE PREVIEW BADGE */}
+            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/85 backdrop-blur-md text-[9px] font-black uppercase text-white border border-white/20 shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span>Live Preview</span>
+            </div>
+
+            {/* PREVIEW PROGRESS BAR */}
+            <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 overflow-hidden">
+              <div className="h-full bg-accent animate-pulse w-full" />
+            </div>
           </div>
         )}
 

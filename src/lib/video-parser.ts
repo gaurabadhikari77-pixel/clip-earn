@@ -45,6 +45,80 @@ export function extractYouTubeId(url: string): string | null {
   }
 }
 
+export function extractTikTokId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const videoMatch = parsed.pathname.match(/\/video\/(\d+)/i) || parsed.pathname.match(/\/v\/(\d+)/i);
+    if (videoMatch && videoMatch[1]) {
+      return videoMatch[1];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function extractInstagramShortcode(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/\/(reel|p)\/([a-zA-Z0-9_-]+)/i);
+    if (match && match[2]) {
+      return match[2];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export interface LivePreviewData {
+  type: "youtube" | "tiktok" | "instagram" | "video" | "none";
+  previewUrl: string | null;
+}
+
+export function getLivePreviewInfo(url: string, platform: PlatformType): LivePreviewData {
+  try {
+    if (!url || typeof url !== "string") return { type: "none", previewUrl: null };
+    const trimmed = url.trim();
+
+    // Direct MP4 / WebM video stream
+    if (trimmed.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i)) {
+      return { type: "video", previewUrl: trimmed };
+    }
+
+    if (platform === "youtube" || trimmed.includes("youtube.com") || trimmed.includes("youtu.be")) {
+      const ytId = extractYouTubeId(trimmed);
+      if (ytId) {
+        return {
+          type: "youtube",
+          previewUrl: `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0`,
+        };
+      }
+    }
+
+    if (platform === "tiktok" || trimmed.includes("tiktok.com")) {
+      const tiktokId = extractTikTokId(trimmed);
+      if (tiktokId) {
+        return {
+          type: "tiktok",
+          previewUrl: `https://www.tiktok.com/player/v1/${tiktokId}?autoplay=1&mute=1&controls=0`,
+        };
+      }
+    }
+
+    if (platform === "instagram" || trimmed.includes("instagram.com")) {
+      const shortcode = extractInstagramShortcode(trimmed);
+      if (shortcode) {
+        return {
+          type: "instagram",
+          previewUrl: `https://www.instagram.com/reel/${shortcode}/embed/`,
+        };
+      }
+    }
+  } catch {}
+  return { type: "none", previewUrl: null };
+}
+
 /**
  * Server-side / client-side video link parser & oEmbed retriever.
  */
