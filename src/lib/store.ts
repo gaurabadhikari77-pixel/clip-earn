@@ -64,6 +64,45 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
                 u.id !== "usr_creator_03" &&
                 !u.id.startsWith("usr_vip_")
             );
+
+            // Enforce 0 initial credits: users only have credits earned from watching videos
+            const engagements = Array.isArray(parsed.engagements) ? parsed.engagements : [];
+            const ownerRewards = Array.isArray(parsed.ownerRewards) ? parsed.ownerRewards : [];
+            const userVideos = Array.isArray(parsed.videos) ? parsed.videos : [];
+
+            for (const u of parsed.users) {
+              if (isOwnerEmail(u.email)) {
+                u.role = "owner";
+                u.credits = 9999;
+                u.postCredits = 9999;
+              } else {
+                const userEngs = engagements.filter((e: any) => e.userId === u.id);
+                const userRewards = ownerRewards.filter((r: any) => r.userId === u.id);
+                const userPosts = userVideos.filter((v: any) => v.userId === u.id);
+
+                let earnedCredits = 0;
+                for (const eng of userEngs) {
+                  const isOwnerVid = parsed.videos.some((v: any) => v.id === eng.videoId && v.isOwnerVideo);
+                  if (!isOwnerVid) {
+                    earnedCredits += 1;
+                  }
+                }
+                for (const rew of userRewards) {
+                  earnedCredits += (rew.creditsAwarded || 2);
+                }
+                const spentCredits = userPosts.length * 1.5;
+                const netCredits = Math.max(0, earnedCredits - spentCredits);
+
+                if (userEngs.length === 0 && userRewards.length === 0) {
+                  u.credits = 0;
+                  u.postCredits = 0;
+                } else {
+                  u.credits = netCredits;
+                  u.postCredits = netCredits;
+                }
+              }
+            }
+
             global.__CLIPEARN_STORE__ = parsed;
             return global.__CLIPEARN_STORE__!;
           }
@@ -299,6 +338,8 @@ export const db = {
       if (user.nickname) {
         existing.nickname = user.nickname.trim();
         existing.name = user.nickname.trim();
+      } else if (user.name) {
+        existing.name = user.name.trim();
       } else if (!existing.nickname) {
         existing.nickname = isOwner
           ? "ClipEarn Founder"
@@ -341,8 +382,8 @@ export const db = {
         user.avatar ||
         `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
       role: isOwner ? "owner" : (user.role || "user"),
-      credits: isOwner ? 9999 : 1.5,
-      postCredits: isOwner ? 9999 : 1.5,
+      credits: isOwner ? 9999 : 0,
+      postCredits: isOwner ? 9999 : 0,
       dailyLimitOverride: isOwner ? -1 : (user.dailyLimitOverride ?? null),
       customDailyLimit: isOwner ? -1 : (user.dailyLimitOverride ?? null),
       bonusSlotsToday: 0,

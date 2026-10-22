@@ -35,7 +35,7 @@ async function runTests() {
   });
 
   assert(Boolean(newUser && newUser.id), "New user was successfully created and upserted");
-  assert(newUser.credits === 2, `New user starts with 2 post credits (got ${newUser.credits})`);
+  assert(newUser.credits === 0, `New user starts with 0 post credits (got ${newUser.credits})`);
   assert(newUser.role === "user", `New user has role 'user' (got ${newUser.role})`);
 
   // Verify that subsequent upsert updates rather than duplicates
@@ -46,8 +46,8 @@ async function runTests() {
   assert(reUpserted.id === newUser.id, "Upserting existing email returns same user id");
   assert(reUpserted.name === "Tester Updated Name", "Upserting existing user updates profile details");
 
-  // TEST 2: Normal user hitting 5 post limit
-  console.log("\n--- TEST 2: Normal User Base Limit (5 posts/day) ---");
+  // TEST 2: Normal user hitting 1 post base limit
+  console.log("\n--- TEST 2: Normal User Base Limit (1 post/day) ---");
   const normalUserEmail = `normal_${Date.now()}@example.com`;
   const normalUser = db.upsertUser({
     email: normalUserEmail,
@@ -58,28 +58,26 @@ async function runTests() {
   db.addCredits(normalUser.id, 20);
 
   let initialStats = db.getUserPostLimitStats(normalUser.id);
-  assert(initialStats.baseLimit === 5, `Normal user base limit is 5 (got ${initialStats.baseLimit})`);
-  assert(initialStats.totalLimit === 5, `Normal user total limit without bonus is 5 (got ${initialStats.totalLimit})`);
+  assert(initialStats.baseLimit === 1, `Normal user base limit is 1 (got ${initialStats.baseLimit})`);
+  assert(initialStats.totalLimit === 1, `Normal user total limit without bonus is 1 (got ${initialStats.totalLimit})`);
 
-  // Post 5 clips
-  for (let i = 1; i <= 5; i++) {
-    db.addVideo({
-      userId: normalUser.id,
-      userName: normalUser.name,
-      userAvatar: normalUser.avatar,
-      userRole: normalUser.role,
-      title: `Normal Clip ${i}`,
-      url: `https://tiktok.com/@normal/clip_${Date.now()}_${i}`,
-      platform: "tiktok",
-      thumbnailUrl: "https://example.com/thumb.jpg",
-      isOwnerVideo: false,
-      isPinned: false,
-    });
-  }
+  // Post 1 clip
+  db.addVideo({
+    userId: normalUser.id,
+    userName: normalUser.name,
+    userAvatar: normalUser.avatar,
+    userRole: normalUser.role,
+    title: `Normal Clip 1`,
+    url: `https://tiktok.com/@normal/clip_${Date.now()}_1`,
+    platform: "tiktok",
+    thumbnailUrl: "https://example.com/thumb.jpg",
+    isOwnerVideo: false,
+    isPinned: false,
+  });
 
   let postStats = db.getUserPostLimitStats(normalUser.id);
-  assert(postStats.postsUsedToday === 5, `Normal user used 5 posts today (got ${postStats.postsUsedToday})`);
-  assert(postStats.canPost === false, "Normal user cannot post anymore once 5 limit is reached");
+  assert(postStats.postsUsedToday === 1, `Normal user used 1 post today (got ${postStats.postsUsedToday})`);
+  assert(postStats.canPost === false, "Normal user cannot post anymore once 1 limit is reached");
 
   // TEST 3: Normal user watching Owner clips up to 10 limit (+2 per clip, max +5 bonus)
   console.log("\n--- TEST 3: Normal User Watching Owner Clips (+2 slots, max 10) ---");
@@ -131,14 +129,14 @@ async function runTests() {
 
   let bonusStats1 = db.getUserPostLimitStats(normalUser.id);
   assert(bonusStats1.bonusSlotsEarned === 2, `Bonus slots earned is now 2 (got ${bonusStats1.bonusSlotsEarned})`);
-  assert(bonusStats1.totalLimit === 7, `Total limit increased from 5 to 7 (got ${bonusStats1.totalLimit})`);
-  assert(bonusStats1.canPost === true, "Normal user can now post again because limit expanded to 7!");
+  assert(bonusStats1.totalLimit === 3, `Total limit increased from 1 to 3 (got ${bonusStats1.totalLimit})`);
+  assert(bonusStats1.canPost === true, "Normal user can now post again because limit expanded to 3!");
 
   // Watch same owner clip again -> must NOT reward twice!
   const dupRes = db.recordEngagement(normalUser.id, ownerClip1.id, 15, true, true, true);
   assert(dupRes.success && dupRes.slotsAwarded === 0 && dupRes.creditsAwarded === 0, "Duplicate watch on same Owner clip awards 0 extra slots/credits");
 
-  // Watch Owner Clip 2 -> +2 slots (total bonus = 4, total limit = 9)
+  // Watch Owner Clip 2 -> +2 slots (total bonus = 4, total limit = 5)
   const res2 = db.recordEngagement(normalUser.id, ownerClip2.id, 15, true, false, false);
   assert(res2.slotsAwarded === 2, `Owner clip 2 granted +2 upload slots (got ${res2.slotsAwarded})`);
 
@@ -148,7 +146,7 @@ async function runTests() {
 
   let maxedBonusStats = db.getUserPostLimitStats(normalUser.id);
   assert(maxedBonusStats.bonusSlotsEarned === 5, `Total bonus slots capped at 5 (got ${maxedBonusStats.bonusSlotsEarned})`);
-  assert(maxedBonusStats.totalLimit === 10, `Total daily limit reached maximum of 10 posts/day (got ${maxedBonusStats.totalLimit})`);
+  assert(maxedBonusStats.totalLimit === 6, `Total daily limit reached maximum of 6 posts/day (got ${maxedBonusStats.totalLimit})`);
 
   // TEST 4: VIP user watching another VIP clip (gives 0 rewards)
   console.log("\n--- TEST 4: VIP Watching Another VIP Clip (0 Rewards) ---");

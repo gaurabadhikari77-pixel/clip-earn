@@ -116,8 +116,7 @@ export function Sidebar() {
               <span>Watch Rule</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
-              Watch clips for 13+ seconds & leave a like to earn post credits. Watch verified Owner clips for{" "}
-              <strong className="text-fg">+2 bonus slots & +2 credits</strong>!
+              All clippers start with 0 credits. Watch community clips for 13s + like to earn <strong className="text-fg">+1 credit</strong>, or Owner clips for <strong className="text-warning">+2 credits & +2 upload slots</strong>! (Upload costs 1.5 credits).
             </p>
           </div>
         </div>

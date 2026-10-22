@@ -169,7 +169,7 @@ export default function UploadPage() {
             <div>
               <p className="text-xs font-bold text-fg">Sign In Required to Upload</p>
               <p className="text-[11px] text-muted">
-                Continue with Google to get 1.5 initial post credits (1 free upload) and start uploading clips.
+                Sign in with Google, watch clips on the feed to earn your 1.5 upload credits, and get your clips seen by fellow creators!
               </p>
             </div>
           </div>
@@ -425,6 +425,25 @@ export default function UploadPage() {
               />
             </div>
 
+            {/* INSUFFICIENT CREDITS WARNING BANNER */}
+            {!isOwner && userCredits < 1.5 && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                  <Coins className="w-4 h-4" />
+                  <span>Insufficient Credits to Post (Need 1.5 Credits)</span>
+                </div>
+                <p className="text-[11px] text-muted leading-relaxed">
+                  You currently have <strong className="text-fg">{userCredits} credits</strong>. To upload, watch either <strong className="text-amber-400">Owner clips (+2 credits)</strong> or <strong className="text-fg">community clips (+1 credit)</strong> for 13+ seconds and like them!
+                </p>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs transition-colors"
+                >
+                  <span>Watch Clips on Feed to Earn Credits &rarr;</span>
+                </Link>
+              </div>
+            )}
+
             {/* SUBMIT BUTTON */}
             <button
               type="submit"
@@ -435,6 +454,11 @@ export default function UploadPage() {
                 <>
                   <Sparkles className="w-4 h-4 animate-spin" />
                   <span>Submitting to Feed...</span>
+                </>
+              ) : !isOwner && userCredits < 1.5 ? (
+                <>
+                  <Coins className="w-4 h-4" />
+                  <span>Need 1.5 Credits (Watch Clips to Earn)</span>
                 </>
               ) : (
                 <>

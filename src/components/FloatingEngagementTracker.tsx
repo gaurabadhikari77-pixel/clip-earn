@@ -238,8 +238,7 @@ export function FloatingEngagementTracker() {
                     </>
                   ) : (
                     <>
-                      <strong>Clipper Rule:</strong> Liking and commenting boosts the algorithm for
-                      all creators!
+                      <strong>Community Clip:</strong> Watch 13s & like to earn <strong>+1 post credit</strong>! (Need 1.5 credits to upload).
                     </>
                   )}
                 </span>
