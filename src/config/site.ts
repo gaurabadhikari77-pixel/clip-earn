@@ -41,7 +41,7 @@ export const siteConfig = {
 
   vipPriceMonthly: 12.99,
   pinPrice: 5.0,
-  pinDurationHours: 24,
+  pinDurationHours: 48,
   maxPinnedPerUser: 2,
 
   links: {

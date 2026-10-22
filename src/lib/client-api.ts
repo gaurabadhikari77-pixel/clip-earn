@@ -411,7 +411,7 @@ export const clientApi = {
     return db.deleteVideo(videoId);
   },
 
-  async pinVideo(videoId: string, durationHours = 24) {
+  async pinVideo(videoId: string, durationHours = 48) {
     return db.pinVideo(videoId, durationHours);
   },
 

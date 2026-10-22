@@ -20,6 +20,8 @@ import {
   Filter,
   Shuffle,
   Pin,
+  RefreshCw,
+  Clock,
 } from "lucide-react";
 import { Video, ClipCategory } from "@/types";
 import { siteConfig } from "@/config/site";
@@ -38,6 +40,23 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [reportTargetVideo, setReportTargetVideo] = useState<Video | null>(null);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [shuffleCountdown, setShuffleCountdown] = useState<string>("03:00");
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = Date.now();
+      const currentWindow = Math.floor(now / (3 * 60 * 1000));
+      const nextWindowTime = (currentWindow + 1) * (3 * 60 * 1000);
+      const diffSec = Math.max(0, Math.floor((nextWindowTime - now) / 1000));
+      const m = Math.floor(diffSec / 60);
+      const s = diffSec % 60;
+      setShuffleCountdown(`${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [sections, setSections] = useState<{
     owner: Video[];
@@ -197,6 +216,18 @@ export default function FeedPage() {
 
         {/* Separator */}
         <div className="h-5 w-px bg-line mx-1 shrink-0" />
+
+        {/* LIVE REFRESHING COUNTDOWN TIMER */}
+        <div
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-surface border border-line text-muted shadow-sm whitespace-nowrap select-none shrink-0"
+          title="Clips rotate automatically every 3 minutes so every clipper gets fair exposure"
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin-slow" />
+          <span>Refreshes in:</span>
+          <span className="font-mono text-fg font-black bg-surface2 px-1.5 py-0.5 rounded border border-line text-[11px]">
+            {shuffleCountdown}
+          </span>
+        </div>
 
         {/* PIN VIDEO BUTTON (Without insta in label) */}
         <button
@@ -417,8 +448,9 @@ export default function FeedPage() {
                   subtitle="First-look clips with fewest engagements—watch them to boost fellow clippers!"
                   icon={<Sparkles className="w-4 h-4 text-success" />}
                   badge={
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-success/15 text-success border border-success/30">
-                      Auto-Refreshed
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-success/15 text-success border border-success/30 flex items-center gap-1">
+                      <RefreshCw className="w-2.5 h-2.5 animate-spin-slow" />
+                      <span>Shuffles in {shuffleCountdown}</span>
                     </span>
                   }
                   clips={sections.fresh}
@@ -450,6 +482,16 @@ export default function FeedPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <div
+                      className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-surface2 border border-line text-muted"
+                      title="Community clips rotate order every 3 minutes"
+                    >
+                      <Shuffle className="w-3 h-3 text-accent" />
+                      <span className="text-[11px]">Shuffles in</span>
+                      <span className="font-mono text-[11px] font-black text-fg">
+                        {shuffleCountdown}
+                      </span>
+                    </div>
                     <button
                       onClick={() => setIsPinModalOpen(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
@@ -483,22 +525,33 @@ export default function FeedPage() {
               <div className="pt-4 border-t border-line">
                 <ClipRow
                   title="Pinned & VIP Showcase"
-                  subtitle="Promoted clips and top-tier community clippers"
+                  subtitle="Promoted for 48 hours • Shuffles every 3 minutes among pinned clips so each creator gets top spot"
                   icon={<Flame className="w-4 h-4 text-accent fill-accent" />}
                   badge={
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
-                      Boosted
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                      <Flame className="w-2.5 h-2.5 fill-amber-400" />
+                      <span>48h Pin Showcase</span>
                     </span>
                   }
                   actionButton={
-                    <button
-                      onClick={() => setIsPinModalOpen(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
-                      title="Pin your video for 48 hours"
-                    >
-                      <Pin className="w-3.5 h-3.5 fill-amber-400" />
-                      <span>Pin Video</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-surface2 border border-line text-muted"
+                        title="Pinned rotation cycle"
+                      >
+                        <RefreshCw className="w-3 h-3 text-amber-400 animate-spin-slow" />
+                        <span className="text-[11px]">Rotates in</span>
+                        <span className="font-mono text-[11px] font-black text-fg">{shuffleCountdown}</span>
+                      </div>
+                      <button
+                        onClick={() => setIsPinModalOpen(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                        title="Pin your video for 48 hours"
+                      >
+                        <Pin className="w-3.5 h-3.5 fill-amber-400" />
+                        <span>Pin Video</span>
+                      </button>
+                    </div>
                   }
                   seeAllHref="/upgrade"
                   clips={sections.pinnedAndVip}

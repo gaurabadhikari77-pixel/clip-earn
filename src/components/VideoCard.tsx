@@ -61,6 +61,19 @@ export function VideoCard({
     return getLivePreviewInfo(video.url, video.platform);
   }, [video.url, video.platform]);
 
+  const pinnedRemainingText = useMemo(() => {
+    if (!video.isPinned) return "48h";
+    if (!video.pinnedUntil) return "48h left";
+    const diffMs = new Date(video.pinnedUntil).getTime() - Date.now();
+    if (diffMs <= 0) return "Expired";
+    const hours = Math.floor(diffMs / (3600 * 1000));
+    const minutes = Math.floor((diffMs % (3600 * 1000)) / (60 * 1000));
+    if (hours >= 1) {
+      return `${hours}h left`;
+    }
+    return `${minutes}m left`;
+  }, [video.isPinned, video.pinnedUntil]);
+
   useEffect(() => {
     return () => {
       if (hoverTimerRef.current) {
@@ -101,8 +114,8 @@ export function VideoCard({
         await clientApi.unpinVideo(video.id);
         showToast("Clip unpinned from Showcase.", "info");
       } else {
-        await clientApi.pinVideo(video.id, 24);
-        showToast("Clip pinned to Showcase for 24 hours!", "success");
+        await clientApi.pinVideo(video.id, 48);
+        showToast("Clip pinned to Showcase for 48 hours!", "success");
       }
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -306,9 +319,16 @@ export function VideoCard({
               )}
 
               {video.isPinned && !video.isOwnerVideo && (
-                <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-danger text-white shadow-sm flex items-center gap-0.5">
+                <span
+                  title={
+                    video.pinnedUntil
+                      ? `Pinned for 48 hours (Until ${new Date(video.pinnedUntil).toLocaleString()})`
+                      : "Pinned for 48 hours"
+                  }
+                  className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm flex items-center gap-1 border border-amber-300/30"
+                >
                   <Flame className="w-2.5 h-2.5 fill-white" />
-                  <span>Pinned</span>
+                  <span>Pinned • {pinnedRemainingText}</span>
                 </span>
               )}
 
@@ -374,7 +394,7 @@ export function VideoCard({
                         className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface2 text-left font-semibold text-fg transition-colors"
                       >
                         <Flame className="w-3.5 h-3.5 text-danger shrink-0" />
-                        <span>{video.isPinned ? "Unpin Clip" : "Pin Clip (24h)"}</span>
+                        <span>{video.isPinned ? "Unpin Clip" : "Pin Clip (48h)"}</span>
                       </button>
 
                       {/* Edit Clip */}
