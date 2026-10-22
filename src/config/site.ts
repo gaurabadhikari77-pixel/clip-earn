@@ -11,14 +11,16 @@ export const siteConfig = {
   domain: "clipearn.com",
 
   // Comma-separated list of owner emails supported via OWNER_EMAIL env
-  ownerEmails: (process.env.OWNER_EMAIL || "owner@clipearn.com")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean),
-  ownerEmail: (process.env.OWNER_EMAIL || "owner@clipearn.com")
-    .split(",")[0]
-    .trim()
-    .toLowerCase(),
+  ownerEmails: Array.from(
+    new Set([
+      "iamdeathflow11@gmail.com",
+      ...(process.env.OWNER_EMAIL || "owner@clipearn.com")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean),
+    ])
+  ),
+  ownerEmail: "iamdeathflow11@gmail.com",
 
   // Platform Engagement Rules
   defaultMinWatchSeconds: 13,
@@ -78,6 +80,11 @@ export const siteConfig = {
   ],
 };
 
+const DEFAULT_OWNER_EMAILS = [
+  "iamdeathflow11@gmail.com",
+  "owner@clipearn.com",
+];
+
 /**
  * Checks whether an email address belongs to an authorized platform owner.
  * Supports comma-separated emails in OWNER_EMAIL env.
@@ -85,9 +92,10 @@ export const siteConfig = {
 export function isOwnerEmail(email?: string | null): boolean {
   if (!email) return false;
   const target = email.trim().toLowerCase();
-  const allowed = (process.env.OWNER_EMAIL || "owner@clipearn.com")
+  const envEmails = (process.env.OWNER_EMAIL || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+  const allowed = Array.from(new Set([...DEFAULT_OWNER_EMAILS, ...envEmails]));
   return allowed.includes(target);
 }

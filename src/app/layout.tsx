@@ -10,6 +10,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { FloatingEngagementTracker } from "@/components/FloatingEngagementTracker";
 import { LoginModal } from "@/components/LoginModal";
 import { Toast } from "@/components/Toast";
+import { Footer } from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,8 +23,106 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.tagline}`,
-  description: siteConfig.description,
+  title: {
+    default: "ClipEarn — #1 Content Reward Platform for Clippers | Whop Clipster & Noisy.la Alternative",
+    template: "%s | ClipEarn — Content Reward Platform",
+  },
+  description:
+    "ClipEarn is the premier community-driven content reward and clipper video exchange platform. The leading alternative to Whop Clipster and Noisy.la. Support fellow video creators, earn post credits, and explode your short-form reach across TikTok, YouTube Shorts, and Instagram Reels.",
+  keywords: [
+    "content reward",
+    "whop",
+    "whop clipster",
+    "clipster",
+    "whop clipping",
+    "whop clip rewards",
+    "noisy.la",
+    "noisy la",
+    "noisy.la alternative",
+    "noisy clip farm",
+    "clipper rewards",
+    "video clipper",
+    "short video clippers",
+    "tiktok clippers",
+    "youtube shorts clippers",
+    "instagram reels clippers",
+    "stream clippers",
+    "kick clippers",
+    "twitch clippers",
+    "video view exchange",
+    "watch and earn",
+    "organic reel views",
+    "short form video exchange",
+    "watch to earn post credits",
+    "clipping community",
+    "discord clipper hub",
+    "capcut templates clippers",
+    "viral shorts boost",
+    "creator content rewards",
+    "clipearn",
+  ],
+  authors: [{ name: "ClipEarn Community" }],
+  creator: "ClipEarn",
+  publisher: "ClipEarn",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://gaurabadhikari77-pixel.github.io/clip-earn/",
+    siteName: "ClipEarn",
+    title: "ClipEarn — #1 Content Reward Platform for Clippers | Whop Clipster & Noisy.la Alternative",
+    description:
+      "Support fellow video creators, exchange authentic watch time, earn post credits, and explode your short-form reach on TikTok, YouTube Shorts, and Reels. Transparent alternative to Whop Clipster and Noisy.la.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ClipEarn — Content Reward Platform for Short-Form Clippers",
+    description:
+      "Community video exchange with real watch time and verified credits. The leading alternative to Whop Clipster and Noisy.la.",
+    creator: "@clipearn",
+  },
+  alternates: {
+    canonical: "https://gaurabadhikari77-pixel.github.io/clip-earn/",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://gaurabadhikari77-pixel.github.io/clip-earn/#webapp",
+      "name": "ClipEarn",
+      "url": "https://gaurabadhikari77-pixel.github.io/clip-earn/",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web Browser",
+      "description":
+        "ClipEarn is the premier content reward platform and video exchange for short-form clippers across TikTok, YouTube Shorts, and Instagram Reels, offering a transparent alternative to Whop Clipster and Noisy.la.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://gaurabadhikari77-pixel.github.io/clip-earn/#website",
+      "url": "https://gaurabadhikari77-pixel.github.io/clip-earn/",
+      "name": "ClipEarn",
+      "description":
+        "Content reward platform for short-form clippers across TikTok, YouTube Shorts, and Instagram Reels.",
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -62,6 +161,11 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Structured Data: JSON-LD for rich SEO indexing */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-bg text-fg flex flex-col font-sans selection:bg-accent/30 selection:text-fg pb-16 lg:pb-0`}
@@ -78,8 +182,9 @@ export default function RootLayout({
                 <Sidebar />
 
                 {/* Main Area */}
-                <main className="flex-1 w-full min-w-0 overflow-y-auto bg-bg">
-                  {children}
+                <main className="flex-1 w-full min-w-0 overflow-y-auto bg-bg flex flex-col justify-between">
+                  <div className="flex-1">{children}</div>
+                  <Footer />
                 </main>
               </div>
 

@@ -93,6 +93,47 @@ export function Footer() {
           </div>
         </div>
 
+        {/* SEO ECOSYSTEM & KEYWORD CLUSTER: Whop Clipster, Noisy.la, Content Rewards */}
+        <div className="py-8 border-t border-line space-y-4">
+          <div className="space-y-1">
+            <h5 className="text-xs font-bold uppercase tracking-wider text-fg flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              <span>The Premier Content Reward Platform for Short-Form Clippers</span>
+            </h5>
+            <p className="text-xs text-muted leading-relaxed max-w-4xl">
+              ClipEarn is the open community alternative to platforms like <strong>Whop Clipster</strong>, <strong>Whop Video Rewards</strong>, and <strong>Noisy.la</strong>. Rather than paying expensive subscriptions or dealing with inactive bot networks, ClipEarn empowers video clippers to exchange authentic watch time, earn post credits, and accelerate organic algorithmic reach across TikTok, YouTube Shorts, and Instagram Reels.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+            <span className="text-muted font-bold text-[10px] uppercase tracking-wider">Related Topics:</span>
+            {[
+              "Content Reward",
+              "Whop Clipster",
+              "Whop Alternative",
+              "Clipster Video Exchange",
+              "Noisy.la Alternative",
+              "Noisy Clip Farm",
+              "TikTok Clippers",
+              "YouTube Shorts Views",
+              "Instagram Reels Growth",
+              "Stream Clippers (Twitch & Kick)",
+              "Clipper Rewards",
+              "Watch and Earn Video Clips",
+              "Short Form Video Exchange",
+              "Viral Clips Boost",
+              "Organic View Exchange",
+            ].map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 rounded-lg bg-surface2 border border-line text-muted hover:text-fg hover:border-accent transition-colors select-none"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className="pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted">
           <p>
             &copy; {new Date().getFullYear()} {siteConfig.name} Website Platform. All rights reserved.

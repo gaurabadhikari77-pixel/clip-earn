@@ -143,139 +143,232 @@ export default function FeedPage() {
           <div className="h-48 rounded-2xl bg-surface2 border border-line" />
           <div className="h-64 rounded-2xl bg-surface2 border border-line" />
         </div>
-      ) : (
-        <div className="space-y-10">
-          {/* SECTION 1: OWNER SPOTLIGHT (Horizontal row with crown badge) */}
-          {sections.owner && sections.owner.length > 0 && (
-            <ClipRow
-              title="Owner Spotlight"
-              subtitle="Official clipper strategies, velocity presets, and masterclasses"
-              icon={<Crown className="w-4 h-4 text-warning fill-warning" />}
-              badge={
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-warning/15 text-warning border border-warning/30">
-                  Official
-                </span>
-              }
-              clips={sections.owner}
-              watchedSet={watchedSet}
-              onReportClick={(v) => setReportTargetVideo(v)}
-            />
-          )}
+      ) : (() => {
+        const totalClips =
+          (sections.owner?.length || 0) +
+          (sections.pinnedAndVip?.length || 0) +
+          (sections.fresh?.length || 0) +
+          (sections.community?.length || 0) +
+          (sections.watched?.length || 0);
 
-          {/* SECTION 2: PINNED AND VIP (Horizontal row with glowing badges) */}
-          {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (
-            <ClipRow
-              title="Pinned & VIP Showcase"
-              subtitle="Promoted clips and top-tier community clippers"
-              icon={<Flame className="w-4 h-4 text-accent fill-accent" />}
-              badge={
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
-                  Boosted
-                </span>
-              }
-              seeAllHref="/upgrade"
-              clips={sections.pinnedAndVip}
-              watchedSet={watchedSet}
-              onReportClick={(v) => setReportTargetVideo(v)}
-            />
-          )}
+        if (totalClips === 0) {
+          return (
+            <div className="space-y-8">
+              {/* EMPTY STATE HERO CARD */}
+              <div className="w-full bg-surface border border-line rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden shadow-sm">
+                <div className="max-w-2xl mx-auto space-y-6 relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 text-accent flex items-center justify-center mx-auto shadow-inner">
+                    <Sparkles className="w-8 h-8" />
+                  </div>
 
-          {/* SECTION AD SLOT */}
-          <AdSlot type="inFeed" />
+                  <div className="space-y-2">
+                    <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30 inline-block">
+                      Community Feed Ready
+                    </span>
+                    <h2 className="text-2xl sm:text-4xl font-black text-fg tracking-tight">
+                      No Clips Posted Yet
+                    </h2>
+                    <p className="text-sm sm:text-base text-muted max-w-lg mx-auto leading-relaxed">
+                      Be the pioneer creator to post your first short or reel! Gain genuine views from real clippers and earn watch-to-post credits.
+                    </p>
+                  </div>
 
-          {/* SECTION 3: FRESH CLIPS, NEEDS VIEWS (Automatic booster section) */}
-          {sections.fresh && sections.fresh.length > 0 && (
-            <div id="fresh">
-              <ClipRow
-                title="Fresh Clips • Needs Views"
-                subtitle="First-look clips with fewest engagements—watch them to boost fellow clippers!"
-                icon={<Sparkles className="w-4 h-4 text-success" />}
-                badge={
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-success/15 text-success border border-success/30">
-                    Auto-Refreshed
-                  </span>
-                }
-                clips={sections.fresh}
-                watchedSet={watchedSet}
-                onReportClick={(v) => setReportTargetVideo(v)}
-                isFresh={true}
-              />
-            </div>
-          )}
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <Link
+                      href="/post"
+                      className="px-6 py-3.5 rounded-xl bg-accent hover:opacity-95 text-accent-fg font-extrabold text-sm flex items-center gap-2 shadow-md transition-all active:scale-[0.98]"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Post Your First Clip</span>
+                    </Link>
 
-          {/* SECTION 4: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
-          <section className="space-y-4 pt-2">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-xl bg-surface2 border border-line text-accent">
-                  <Users className="w-4 h-4" />
+                    {(selectedCategory !== "all" || selectedPlatform !== "all") && (
+                      <button
+                        onClick={() => {
+                          setSelectedCategory("all");
+                          setSelectedPlatform("all");
+                        }}
+                        className="px-5 py-3.5 rounded-xl bg-surface2 hover:bg-line border border-line text-fg font-bold text-sm transition-colors"
+                      >
+                        Reset Category Filters
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black tracking-tight text-fg">
-                    Community Clips
-                  </h2>
-                  <p className="text-xs text-muted font-medium">
-                    All clips from indie clippers across TikTok, YouTube, and Instagram
+              </div>
+
+              {/* THREE CORE CONTENT REWARD VALUE PROPS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-6 rounded-2xl bg-surface border border-line space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-success/15 border border-success/30 text-success flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold text-fg">Authentic Content Reward</h3>
+                  <p className="text-xs text-muted leading-relaxed">
+                    Watch community clips for at least 13 seconds to earn post credits. Grow retention signals naturally on TikTok, YouTube Shorts, and Reels.
+                  </p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-surface border border-line space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 text-accent flex items-center justify-center">
+                    <Crown className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold text-fg">Whop & Noisy.la Alternative</h3>
+                  <p className="text-xs text-muted leading-relaxed">
+                    Unlike closed Discord paywalls or noisy bot rings, ClipEarn offers transparent credit exchange, anti-cheat engagement tracking, and VIP boosts.
+                  </p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-surface border border-line space-y-2">
+                  <div className="w-10 h-10 rounded-xl bg-warning/15 border border-warning/30 text-warning flex items-center justify-center">
+                    <Flame className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold text-fg">Clipper Bonus System</h3>
+                  <p className="text-xs text-muted leading-relaxed">
+                    Engage with verified Owner tutorials to unlock +2 bonus post slots per clip, allowing up to 10 daily uploads for normal users and 30 for VIP members.
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1 rounded-lg border border-line">
-                {sections.community?.length || 0} clips
-              </span>
-            </div>
 
-            {/* RESPONSIVE VERTICAL GRID (2 on mobile up to 6 on xl) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-              {sections.community?.map((clip) => (
-                <VideoCard
-                  key={clip.id}
-                  video={clip}
-                  isWatched={false}
+              <AdSlot type="footerBanner" />
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-10">
+            {/* SECTION 1: OWNER SPOTLIGHT (Horizontal row with crown badge) */}
+            {sections.owner && sections.owner.length > 0 && (
+              <ClipRow
+                title="Owner Spotlight"
+                subtitle="Official clipper strategies, velocity presets, and masterclasses"
+                icon={<Crown className="w-4 h-4 text-warning fill-warning" />}
+                badge={
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-warning/15 text-warning border border-warning/30">
+                    Official
+                  </span>
+                }
+                clips={sections.owner}
+                watchedSet={watchedSet}
+                onReportClick={(v) => setReportTargetVideo(v)}
+              />
+            )}
+
+            {/* SECTION 2: PINNED AND VIP (Horizontal row with glowing badges) */}
+            {sections.pinnedAndVip && sections.pinnedAndVip.length > 0 && (
+              <ClipRow
+                title="Pinned & VIP Showcase"
+                subtitle="Promoted clips and top-tier community clippers"
+                icon={<Flame className="w-4 h-4 text-accent fill-accent" />}
+                badge={
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                    Boosted
+                  </span>
+                }
+                seeAllHref="/upgrade"
+                clips={sections.pinnedAndVip}
+                watchedSet={watchedSet}
+                onReportClick={(v) => setReportTargetVideo(v)}
+              />
+            )}
+
+            {/* SECTION AD SLOT */}
+            <AdSlot type="inFeed" />
+
+            {/* SECTION 3: FRESH CLIPS, NEEDS VIEWS (Automatic booster section) */}
+            {sections.fresh && sections.fresh.length > 0 && (
+              <div id="fresh">
+                <ClipRow
+                  title="Fresh Clips • Needs Views"
+                  subtitle="First-look clips with fewest engagements—watch them to boost fellow clippers!"
+                  icon={<Sparkles className="w-4 h-4 text-success" />}
+                  badge={
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-success/15 text-success border border-success/30">
+                      Auto-Refreshed
+                    </span>
+                  }
+                  clips={sections.fresh}
+                  watchedSet={watchedSet}
                   onReportClick={(v) => setReportTargetVideo(v)}
+                  isFresh={true}
                 />
-              ))}
-            </div>
-          </section>
+              </div>
+            )}
 
-          {/* WATCHED CLIPS (Moved to bottom of feed, never hidden) */}
-          {sections.watched && sections.watched.length > 0 && (
-            <section className="space-y-4 pt-8 border-t border-line">
-              <div className="flex items-center justify-between pb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-xl bg-success/10 text-success">
-                    <CheckCircle2 className="w-4 h-4" />
+            {/* SECTION 4: COMMUNITY CLIPS (Vertical Wrapping Grid) */}
+            <section className="space-y-4 pt-2">
+              <div className="flex items-center justify-between border-b border-line pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-xl bg-surface2 border border-line text-accent">
+                    <Users className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-sm sm:text-base font-bold text-fg">
-                      Already Watched & Supported
+                    <h2 className="text-base sm:text-lg font-black tracking-tight text-fg">
+                      Community Clips
                     </h2>
-                    <p className="text-xs text-muted">
-                      Clips you&apos;ve verified (credits claimed). They remain visible here.
+                    <p className="text-xs text-muted font-medium">
+                      All clips from indie clippers across TikTok, YouTube, and Instagram
                     </p>
                   </div>
                 </div>
-                <span className="text-xs text-muted font-semibold">
-                  {sections.watched.length} watched
+                <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1 rounded-lg border border-line">
+                  {sections.community?.length || 0} clips
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 opacity-75">
-                {sections.watched.map((clip) => (
+              {/* RESPONSIVE VERTICAL GRID (2 on mobile up to 6 on xl) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                {sections.community?.map((clip) => (
                   <VideoCard
                     key={clip.id}
                     video={clip}
-                    isWatched={true}
+                    isWatched={false}
                     onReportClick={(v) => setReportTargetVideo(v)}
                   />
                 ))}
               </div>
             </section>
-          )}
 
-          {/* FOOTER AD BANNER */}
-          <AdSlot type="footerBanner" />
-        </div>
-      )}
+            {/* WATCHED CLIPS (Moved to bottom of feed, never hidden) */}
+            {sections.watched && sections.watched.length > 0 && (
+              <section className="space-y-4 pt-8 border-t border-line">
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-success/10 text-success">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm sm:text-base font-bold text-fg">
+                        Already Watched & Supported
+                      </h2>
+                      <p className="text-xs text-muted">
+                        Clips you&apos;ve verified (credits claimed). They remain visible here.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted font-semibold">
+                    {sections.watched.length} watched
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 opacity-75">
+                  {sections.watched.map((clip) => (
+                    <VideoCard
+                      key={clip.id}
+                      video={clip}
+                      isWatched={true}
+                      onReportClick={(v) => setReportTargetVideo(v)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* FOOTER AD BANNER */}
+            <AdSlot type="footerBanner" />
+          </div>
+        );
+      })()}
 
       {/* REPORT VIDEO MODAL */}
       <ReportModal

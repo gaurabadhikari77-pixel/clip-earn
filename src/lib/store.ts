@@ -28,7 +28,7 @@ declare global {
   } | undefined;
 }
 
-const STORAGE_KEY = "clipearn_local_store_v1";
+const STORAGE_KEY = "clipearn_local_store_v4";
 
 export function saveStore() {
   if (typeof window !== "undefined" && global.__CLIPEARN_STORE__) {
@@ -42,10 +42,25 @@ function getStore(): NonNullable<typeof global.__CLIPEARN_STORE__> {
   if (!global.__CLIPEARN_STORE__) {
     if (typeof window !== "undefined") {
       try {
+        // Remove legacy store caches containing old mock/seed videos
+        localStorage.removeItem("clipearn_local_store_v1");
+        localStorage.removeItem("clipearn_local_store_v2");
+        localStorage.removeItem("clipearn_local_store_v3");
+
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed && Array.isArray(parsed.videos) && parsed.videos.length > 0) {
+          if (parsed && Array.isArray(parsed.videos)) {
+            // Strip any remaining legacy seed video IDs
+            parsed.videos = parsed.videos.filter(
+              (v: Video) =>
+                !v.id.startsWith("vid_owner_") &&
+                !v.id.startsWith("vid_pinned_") &&
+                !v.id.startsWith("vid_vip_") &&
+                !v.id.startsWith("vid_fresh_") &&
+                !v.id.startsWith("vid_comm_") &&
+                !v.id.startsWith("vid_watch_")
+            );
             global.__CLIPEARN_STORE__ = parsed;
             return global.__CLIPEARN_STORE__!;
           }

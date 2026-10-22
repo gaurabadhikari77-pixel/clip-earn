@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+
+Sitemap: https://gaurabadhikari77-pixel.github.io/clip-earn/sitemap.xml

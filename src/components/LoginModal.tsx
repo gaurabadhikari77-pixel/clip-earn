@@ -230,12 +230,12 @@ export function LoginModal() {
               >
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <button
-                    onClick={() => handleQuickLogin("owner@clipearn.com", "ClipEarn Owner", "owner")}
+                    onClick={() => handleQuickLogin("iamdeathflow11@gmail.com", "Admin (iamdeathflow11)", "owner")}
                     disabled={isLoading}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-warning/10 hover:bg-warning/20 text-warning border border-warning/20 text-left transition-colors"
                   >
                     <Crown className="w-3.5 h-3.5 text-warning shrink-0" />
-                    <span className="truncate">Owner Login</span>
+                    <span className="truncate">Admin (iamdeathflow11)</span>
                   </button>
 
                   <button
