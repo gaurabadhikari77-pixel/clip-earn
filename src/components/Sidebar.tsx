@@ -15,24 +15,26 @@ import {
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
+interface SidebarNavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  highlight?: boolean;
+  vip?: boolean;
+  external?: boolean;
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useApp();
 
-  const navItems = [
+  const navItems: SidebarNavItem[] = [
     { label: "Feed", href: "/", icon: Compass },
     { label: "Fresh Clips", href: "/#fresh", icon: Sparkles, badge: "New" },
     { label: "Upload Clip", href: "/post", icon: PlusCircle, highlight: true },
     { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
     { label: "VIP Upgrade", href: "/upgrade", icon: Crown, vip: true },
-    {
-      label: "Pin Video (24h)",
-      href: "https://www.instagram.com/gaurabb_adk/",
-      icon: Pin,
-      isPin: true,
-      external: true,
-      badge: "Insta",
-    },
     { label: "My Profile", href: "/profile", icon: User },
   ];
 
@@ -80,8 +82,6 @@ export function Sidebar() {
                           ? "text-accent"
                           : item.vip
                           ? "text-warning"
-                          : (item as any).isPin
-                          ? "text-amber-400"
                           : "text-muted group-hover:text-fg"
                       }`}
                     />

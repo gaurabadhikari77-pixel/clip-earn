@@ -12,6 +12,7 @@ interface ClipRowProps {
   icon?: React.ReactNode;
   badge?: React.ReactNode;
   seeAllHref?: string;
+  actionButton?: React.ReactNode;
   clips: Video[];
   watchedSet?: Set<string>;
   onReportClick?: (v: Video) => void;
@@ -24,6 +25,7 @@ export function ClipRow({
   icon,
   badge,
   seeAllHref,
+  actionButton,
   clips,
   watchedSet,
   onReportClick,
@@ -81,6 +83,7 @@ export function ClipRow({
         </div>
 
         <div className="flex items-center gap-2">
+          {actionButton}
           {seeAllHref && (
             <Link
               href={seeAllHref}

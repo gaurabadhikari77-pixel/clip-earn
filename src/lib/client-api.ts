@@ -95,10 +95,11 @@ export const clientApi = {
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 
     ownerVideos.sort(sortByDate);
-    pinnedAndVipVideos.sort(sortByDate);
     watchedVideos.sort(sortByDate);
 
-    // 3-Minute Interval Shuffle for Community & Fresh clips (Fair rotation for all clippers)
+    // 3-Minute Interval Shuffle:
+    // - Pinned videos shuffle strictly among themselves in the pinned section only
+    // - Normal community and fresh videos shuffle strictly on the normal feed only
     const shuffleWindow = Math.floor(Date.now() / (3 * 60 * 1000));
     const shuffleWithSeed = <T>(array: T[], seed: number): T[] => {
       const arr = [...array];
@@ -117,13 +118,14 @@ export const clientApi = {
       return arr;
     };
 
+    const rotatedPinnedAndVip = shuffleWithSeed(pinnedAndVipVideos, shuffleWindow + 888);
     const rotatedCommunity = shuffleWithSeed(communityVideos, shuffleWindow);
     const rotatedFresh = shuffleWithSeed(freshVideos, shuffleWindow + 42);
 
     return {
       sections: {
         owner: ownerVideos,
-        pinnedAndVip: pinnedAndVipVideos,
+        pinnedAndVip: rotatedPinnedAndVip,
         fresh: rotatedFresh,
         community: rotatedCommunity,
         watched: watchedVideos,

@@ -217,8 +217,8 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
                       </p>
                     </div>
 
-                    {/* VIP UPGRADE & PIN VIDEO LINKS (Direct to Instagram) */}
-                    <div className="py-1 border-b border-line mb-1 space-y-1">
+                    {/* VIP UPGRADE LINK (Direct to Instagram) */}
+                    <div className="py-1 border-b border-line mb-1">
                       <a
                         href="https://www.instagram.com/gaurabb_adk/"
                         target="_blank"
@@ -231,20 +231,6 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
                           <span>Get VIP Rank</span>
                         </span>
                         <span className="text-[10px] text-pink-400/80">DM Instagram &rarr;</span>
-                      </a>
-
-                      <a
-                        href="https://www.instagram.com/gaurabb_adk/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => setRoleMenuOpen(false)}
-                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-400 font-bold border border-amber-500/20 transition-colors"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <Pin className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Pin Video (24h)</span>
-                        </span>
-                        <span className="text-[10px] text-amber-400/80">Msg on Insta &rarr;</span>
                       </a>
                     </div>
 

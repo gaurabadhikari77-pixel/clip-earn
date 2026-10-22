@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Filter,
   Shuffle,
+  Pin,
 } from "lucide-react";
 import { Video, ClipCategory } from "@/types";
 import { siteConfig } from "@/config/site";
@@ -27,6 +28,7 @@ import { VideoCard } from "@/components/VideoCard";
 import { ClipRow } from "@/components/ClipRow";
 import { AdSlot } from "@/components/AdSlot";
 import { ReportModal } from "@/components/ReportModal";
+import { PinVideoModal } from "@/components/PinVideoModal";
 import { clientApi } from "@/lib/client-api";
 
 export default function FeedPage() {
@@ -35,6 +37,7 @@ export default function FeedPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [reportTargetVideo, setReportTargetVideo] = useState<Video | null>(null);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
   const [sections, setSections] = useState<{
     owner: Video[];
@@ -158,6 +161,19 @@ export default function FeedPage() {
             {p.name}
           </button>
         ))}
+
+        {/* Separator */}
+        <div className="h-5 w-px bg-line mx-1 shrink-0" />
+
+        {/* PIN VIDEO BUTTON (Without insta in label) */}
+        <button
+          onClick={() => setIsPinModalOpen(true)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 transition-all whitespace-nowrap active:scale-95 shrink-0"
+          title="Pin your video for 48 hours"
+        >
+          <Pin className="w-3.5 h-3.5 fill-amber-400" />
+          <span>Pin Video</span>
+        </button>
       </div>
 
       {loading ? (
@@ -315,9 +331,19 @@ export default function FeedPage() {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1 rounded-lg border border-line">
-                  {sections.community?.length || 0} clips
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsPinModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                    title="Pin your video for 48 hours"
+                  >
+                    <Pin className="w-3.5 h-3.5 fill-amber-400" />
+                    <span>Pin Video</span>
+                  </button>
+                  <span className="text-xs font-bold text-muted bg-surface2 px-2.5 py-1.5 rounded-xl border border-line">
+                    {sections.community?.length || 0} clips
+                  </span>
+                </div>
               </div>
 
               {/* RESPONSIVE VERTICAL GRID (2 on mobile up to 6 on xl) */}
@@ -344,6 +370,16 @@ export default function FeedPage() {
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
                       Boosted
                     </span>
+                  }
+                  actionButton={
+                    <button
+                      onClick={() => setIsPinModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all active:scale-95 shadow-sm"
+                      title="Pin your video for 48 hours"
+                    >
+                      <Pin className="w-3.5 h-3.5 fill-amber-400" />
+                      <span>Pin Video</span>
+                    </button>
                   }
                   seeAllHref="/upgrade"
                   clips={sections.pinnedAndVip}
@@ -399,6 +435,12 @@ export default function FeedPage() {
       <ReportModal
         video={reportTargetVideo}
         onClose={() => setReportTargetVideo(null)}
+      />
+
+      {/* PIN VIDEO MODAL */}
+      <PinVideoModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
       />
     </div>
   );
