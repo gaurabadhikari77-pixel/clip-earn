@@ -270,24 +270,33 @@ export function FloatingEngagementTracker() {
                   </span>
                 </div>
 
-                {/* 2. Liked (Self-confirmed) */}
+                {/* 2. Liked (MANDATORY REQUIREMENT) */}
                 <button
                   type="button"
                   onClick={() => toggleChecklist("liked")}
                   className={`w-full flex items-center justify-between p-2 rounded-xl border text-xs text-left transition-all ${
                     liked
-                      ? "bg-surface2 border-accent text-fg font-semibold"
+                      ? "bg-accent/15 border-accent text-fg font-semibold shadow-sm"
+                      : hasMetTime
+                      ? "bg-warning/15 border-warning text-fg font-semibold ring-1 ring-warning"
                       : "bg-surface2 border-line hover:border-line/80 text-muted"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <ThumbsUp
-                      className={`w-3.5 h-3.5 ${liked ? "text-accent fill-accent" : "text-muted"}`}
+                      className={`w-3.5 h-3.5 ${
+                        liked ? "text-accent fill-accent" : hasMetTime ? "text-warning" : "text-muted"
+                      }`}
                     />
-                    <span>Liked the video</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Liked the video</span>
+                      <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded bg-warning/20 text-warning border border-warning/30">
+                        Required
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[9px] font-bold text-muted">
-                    {liked ? "Confirmed ✓" : "Click to confirm"}
+                  <span className={`text-[9px] font-bold ${liked ? "text-success font-black" : "text-warning"}`}>
+                    {liked ? "Confirmed ✓" : "Click to confirm *"}
                   </span>
                 </button>
 
@@ -305,7 +314,7 @@ export function FloatingEngagementTracker() {
                     <MessageSquare
                       className={`w-3.5 h-3.5 ${commented ? "text-accent fill-accent" : "text-muted"}`}
                     />
-                    <span>Left a comment</span>
+                    <span>Left a comment (Optional)</span>
                   </div>
                   <span className="text-[9px] font-bold text-muted">
                     {commented ? "Confirmed ✓" : "Click to confirm"}
@@ -326,7 +335,7 @@ export function FloatingEngagementTracker() {
                     <UserPlus
                       className={`w-3.5 h-3.5 ${followed ? "text-accent" : "text-muted"}`}
                     />
-                    <span>Followed / Subscribed</span>
+                    <span>Followed / Subscribed (Optional)</span>
                   </div>
                   <span className="text-[9px] font-bold text-muted">
                     {followed ? "Confirmed ✓" : "Click to confirm"}
@@ -365,18 +374,20 @@ export function FloatingEngagementTracker() {
                 <button
                   type="button"
                   disabled={!hasMetTime || isVerifying}
-                  onClick={confirmAndVerifyEngagement}
+                  onClick={hasMetTime && !liked ? () => toggleChecklist("liked") : confirmAndVerifyEngagement}
                   className={`w-full py-3 rounded-2xl font-black text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-sm ${
-                    hasMetTime && !isVerifying
+                    hasMetTime && liked && !isVerifying
                       ? isOwnerClip
                         ? "bg-warning text-black hover:opacity-90 cursor-pointer active:scale-98"
                         : "bg-accent text-accent-fg hover:opacity-90 cursor-pointer active:scale-98"
+                      : hasMetTime && !liked
+                      ? "bg-warning/20 border-2 border-warning text-warning hover:bg-warning/30 cursor-pointer animate-pulse"
                       : "bg-surface2 text-muted border border-line cursor-not-allowed opacity-60"
                   }`}
                 >
                   {isVerifying ? (
                     <span>Verifying with Server...</span>
-                  ) : hasMetTime ? (
+                  ) : hasMetTime && liked ? (
                     <>
                       <Sparkles className="w-4 h-4" />
                       <span>
@@ -386,6 +397,11 @@ export function FloatingEngagementTracker() {
                           ? "Verify Clip (0 VIP Rewards)"
                           : "Verify & Claim +1 Post Credit"}
                       </span>
+                    </>
+                  ) : hasMetTime && !liked ? (
+                    <>
+                      <ThumbsUp className="w-4 h-4 text-warning fill-warning/20" />
+                      <span>Confirm Like to Claim Reward</span>
                     </>
                   ) : (
                     <>

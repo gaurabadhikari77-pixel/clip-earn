@@ -116,16 +116,31 @@ export function Sidebar() {
               <span>Watch Rule</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
-              Watch clips for 13+ seconds to earn credits. Watch verified Owner clips for{" "}
+              Watch clips for 13+ seconds & leave a like to earn post credits. Watch verified Owner clips for{" "}
               <strong className="text-fg">+2 bonus slots & +2 credits</strong>!
             </p>
           </div>
         </div>
 
         {/* SIDEBAR FOOTER */}
-        <div className="pt-3 border-t border-line text-[10px] text-muted flex items-center justify-between">
-          <span>ClipEarn Platform</span>
-          <span className="text-fg font-medium">Solid Theme</span>
+        <div className="pt-3 border-t border-line text-[10px] text-muted space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span>ClipEarn Platform</span>
+            <span className="text-fg font-medium">Solid Theme</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-muted">
+            <Link href="/about" className="hover:text-fg transition-colors">
+              About
+            </Link>
+            <span>&bull;</span>
+            <Link href="/privacy" className="hover:text-fg transition-colors">
+              Privacy
+            </Link>
+            <span>&bull;</span>
+            <Link href="/contact" className="hover:text-fg transition-colors">
+              Contact
+            </Link>
+          </div>
         </div>
       </aside>
 

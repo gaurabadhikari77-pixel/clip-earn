@@ -57,14 +57,41 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/leaderboard" className="hover:text-accent transition-colors">
+                  Clipper Leaderboard
+                </Link>
+              </li>
+              <li>
                 <Link href="/upgrade" className="hover:text-accent transition-colors">
                   VIP Membership
                 </Link>
               </li>
+            </ul>
+          </div>
+
+          {/* About & Legal */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-fg mb-3">
+              About & Legal
+            </h4>
+            <ul className="space-y-2 text-xs text-muted">
               <li>
-                <Link href="/my-videos" className="hover:text-accent transition-colors">
-                  Creator Dashboard
+                <Link href="/about" className="hover:text-accent font-semibold transition-colors">
+                  About ClipEarn
                 </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-accent font-semibold transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-accent font-semibold transition-colors">
+                  Contact Support
+                </Link>
+              </li>
+              <li>
+                <span>13s Watch & Like Standard</span>
               </li>
             </ul>
           </div>
@@ -72,18 +99,9 @@ export function Footer() {
           {/* Clipper Community & Support */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-fg mb-3">
-              Community & Rules
+              Community & Owner
             </h4>
             <ul className="space-y-2 text-xs text-muted">
-              <li>
-                <span>Mutual Support Standard</span>
-              </li>
-              <li>
-                <span>13s Minimum Engagement</span>
-              </li>
-              <li>
-                <span>Anti-Abuse Verification</span>
-              </li>
               <li>
                 <a
                   href="https://www.instagram.com/gaurabb_adk/"
@@ -93,6 +111,20 @@ export function Footer() {
                 >
                   <span>Instagram: @gaurabb_adk</span>
                 </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:iamdeathflow11@gmail.com"
+                  className="hover:text-accent transition-colors"
+                >
+                  Email: iamdeathflow11@gmail.com
+                </a>
+              </li>
+              <li>
+                <span>Anti-Abuse Verification</span>
+              </li>
+              <li>
+                <span>Daily 6:00 AM Reset</span>
               </li>
             </ul>
           </div>
@@ -141,10 +173,23 @@ export function Footer() {
           <p>
             &copy; {new Date().getFullYear()} {siteConfig.name} Website Platform. All rights reserved.
           </p>
+          <div className="flex items-center gap-3 text-[11px]">
+            <Link href="/about" className="hover:text-accent font-medium transition-colors">
+              About
+            </Link>
+            <span className="text-line">&bull;</span>
+            <Link href="/privacy" className="hover:text-accent font-medium transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-line">&bull;</span>
+            <Link href="/contact" className="hover:text-accent font-medium transition-colors">
+              Contact
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             <span>Designed for creators with</span>
             <Heart className="w-3.5 h-3.5 text-danger fill-danger" />
-            <span>Watch. Support. Get Seen.</span>
+            <span>Watch. Like. Get Seen.</span>
           </div>
         </div>
       </div>

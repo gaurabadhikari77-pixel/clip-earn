@@ -418,10 +418,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { success: false };
     }
 
+    // MANDATORY REQUIREMENT: User must like the video to earn rewards
+    if (!activeSession.liked) {
+      showToast("You must like the video to verify engagement and claim your reward!", "error");
+      return { success: false, message: "Like required" };
+    }
+
     setActiveSession((prev) => (prev ? { ...prev, isVerifying: true } : null));
 
     try {
-      const data = await clientApi.verifyEngagement(activeSession.video.id, user.id);
+      const data = await clientApi.verifyEngagement(
+        activeSession.video.id,
+        user.id,
+        Math.floor(finalSeconds),
+        activeSession.liked,
+        activeSession.commented,
+        activeSession.followed
+      );
 
       if (!data.success) {
         showToast(data.message || "Verification failed", "error");

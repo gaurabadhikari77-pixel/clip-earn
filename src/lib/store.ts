@@ -131,6 +131,7 @@ export const db = {
       createdAt: new Date().toISOString(),
       viewsCount: 0,
       engagementsCount: 0,
+      likesCount: 0,
       reportsCount: 0,
     };
     store.videos.unshift(newVideo);
@@ -193,14 +194,24 @@ export const db = {
     return true;
   },
 
-  incrementVideoStats(id: string, view = true, engagement = true) {
+  incrementVideoStats(id: string, view = true, engagement = true, liked = false) {
     const store = getStore();
     const video = store.videos.find((v) => v.id === id);
     if (video) {
       if (view) video.viewsCount += 1;
       if (engagement) video.engagementsCount += 1;
+      if (liked) video.likesCount = (video.likesCount || 0) + 1;
       saveStore();
     }
+  },
+
+  likeVideo(id: string): boolean {
+    const store = getStore();
+    const video = store.videos.find((v) => v.id === id);
+    if (!video) return false;
+    video.likesCount = (video.likesCount || 0) + 1;
+    saveStore();
+    return true;
   },
 
   // --- USERS ---
@@ -578,6 +589,18 @@ export const db = {
       };
     }
 
+    // MANDATORY REQUIREMENT: User must like the video for rewards to be earned
+    if (!liked) {
+      return {
+        success: false,
+        creditAwarded: false,
+        isOwnerBonus: false,
+        slotsAwarded: 0,
+        creditsAwarded: 0,
+        message: "You must like the video to verify engagement and claim your reward!",
+      };
+    }
+
     // Check existing general engagement
     const existingEng = store.engagements.find((e) => e.userId === userId && e.videoId === videoId);
 
@@ -620,9 +643,9 @@ export const db = {
           };
           store.engagements.push(newEng);
           firebaseDb.recordEngagement(newEng).catch(() => {});
-          this.incrementVideoStats(videoId, true, true);
+          this.incrementVideoStats(videoId, true, true, liked);
         } else {
-          this.incrementVideoStats(videoId, true, false);
+          this.incrementVideoStats(videoId, true, false, liked);
         }
 
         saveStore();
@@ -706,11 +729,11 @@ export const db = {
       };
       store.engagements.push(newEng);
       firebaseDb.recordEngagement(newEng).catch(() => {});
-      this.incrementVideoStats(videoId, true, true);
+      this.incrementVideoStats(videoId, true, true, liked);
       this.addCredits(userId, 1);
       creditAwarded = true;
     } else {
-      this.incrementVideoStats(videoId, true, false);
+      this.incrementVideoStats(videoId, true, false, liked);
     }
 
     saveStore();

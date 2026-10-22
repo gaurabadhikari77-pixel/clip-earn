@@ -231,9 +231,17 @@ export const clientApi = {
 
   /**
    * Verifies engagement and awards credits/bonuses.
+   * Requires liked to be true for rewards to be credited.
    */
-  async verifyEngagement(videoId: string, userId: string, watchedSeconds = 15) {
-    const res = db.recordEngagement(userId, videoId, watchedSeconds, true, true, true);
+  async verifyEngagement(
+    videoId: string,
+    userId: string,
+    watchedSeconds = 15,
+    liked = false,
+    commented = false,
+    followed = false
+  ) {
+    const res = db.recordEngagement(userId, videoId, watchedSeconds, liked, commented, followed);
     return res;
   },
 

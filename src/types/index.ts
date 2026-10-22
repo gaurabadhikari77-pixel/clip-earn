@@ -55,6 +55,7 @@ export interface Video {
   pinnedUntil?: string | null;
   viewsCount: number;
   engagementsCount: number;
+  likesCount?: number;
   reportsCount: number;
   createdAt: string;
 }

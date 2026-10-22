@@ -456,9 +456,9 @@ export function VideoCard({
                 <Eye className="w-2.5 h-2.5" />
                 {video.viewsCount || 0}
               </span>
-              <span className="flex items-center gap-0.5 text-rose-300">
+              <span className="flex items-center gap-0.5 text-rose-300" title="Likes">
                 <Heart className="w-2.5 h-2.5 fill-rose-400/50" />
-                {video.engagementsCount || 0}
+                {video.likesCount ?? video.engagementsCount ?? 0}
               </span>
             </div>
           </div>
