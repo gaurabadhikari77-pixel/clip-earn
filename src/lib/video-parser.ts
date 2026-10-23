@@ -154,38 +154,18 @@ export async function fetchVideoMetadata(rawUrl: string): Promise<ParsedVideoInf
 
   const platform = detectPlatform(trimmed);
   let title = "Viral Video Clip";
-  let thumbnailUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80";
+  let thumbnailUrl = "";
 
   if (platform === "youtube") {
     const ytId = extractYouTubeId(trimmed);
     if (ytId) {
       thumbnailUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+      title = `YouTube Clip #${ytId}`;
     }
 
     try {
       const oembedRes = await fetch(
-        `https://www.youtube.com/oembed?url=${encodeURIComponent(trimmed)}&format=json`,
-        { headers: { "User-Agent": "ClipEarn-Bot/1.0" }, next: { revalidate: 3600 } }
-      );
-      if (oembedRes.ok) {
-        const data = await oembedRes.json();
-        if (data.title) title = data.title;
-        if (data.thumbnail_url) thumbnailUrl = data.thumbnail_url;
-      } else if (ytId) {
-        title = `YouTube Clip #${ytId}`;
-      }
-    } catch {
-      if (ytId) title = `YouTube Clip #${ytId}`;
-    }
-  } else if (platform === "tiktok") {
-    const tiktokId = extractTikTokId(trimmed);
-    title = tiktokId ? `Trending TikTok Clip #${tiktokId.slice(-4)}` : "Trending TikTok Clip";
-    thumbnailUrl = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80";
-
-    try {
-      const oembedRes = await fetch(
-        `https://www.tiktok.com/oembed?url=${encodeURIComponent(trimmed)}`,
-        { headers: { "User-Agent": "ClipEarn-Bot/1.0" }, next: { revalidate: 3600 } }
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(trimmed)}&format=json`
       );
       if (oembedRes.ok) {
         const data = await oembedRes.json();
@@ -193,10 +173,57 @@ export async function fetchVideoMetadata(rawUrl: string): Promise<ParsedVideoInf
         if (data.thumbnail_url) thumbnailUrl = data.thumbnail_url;
       }
     } catch {}
+  } else if (platform === "tiktok") {
+    const tiktokId = extractTikTokId(trimmed);
+    title = tiktokId ? `Trending TikTok Clip #${tiktokId.slice(-4)}` : "Trending TikTok Clip";
+
+    // 1. Fetch official TikTok cover image & title via TikWM API (CORS-friendly public endpoint)
+    try {
+      const tikRes = await fetch("https://www.tikwm.com/api/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: new URLSearchParams({ url: trimmed }),
+      });
+
+      if (tikRes.ok) {
+        const data = await tikRes.json();
+        if (data.code === 0 && data.data) {
+          const cover = data.data.cover || data.data.origin_cover;
+          if (cover && typeof cover === "string" && cover.startsWith("http")) {
+            thumbnailUrl = cover;
+          }
+          if (data.data.title && typeof data.data.title === "string") {
+            const cleanTitle = data.data.title.trim();
+            if (cleanTitle) title = cleanTitle;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("TikWM official thumbnail retrieval error:", err);
+    }
+
+    // 2. Secondary fallback via TikTok oembed
+    if (!thumbnailUrl) {
+      try {
+        const oembedRes = await fetch(
+          `https://www.tiktok.com/oembed?url=${encodeURIComponent(trimmed)}`
+        );
+        if (oembedRes.ok) {
+          const data = await oembedRes.json();
+          if (data.title && (!title || title.startsWith("Trending TikTok Clip"))) {
+            title = data.title;
+          }
+          if (data.thumbnail_url) {
+            thumbnailUrl = data.thumbnail_url;
+          }
+        }
+      } catch {}
+    }
   } else if (platform === "instagram") {
     const shortcode = extractInstagramShortcode(trimmed);
     title = shortcode ? `Instagram Reel #${shortcode}` : "Instagram Reel Clip";
-    thumbnailUrl = "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80";
   }
 
   return {

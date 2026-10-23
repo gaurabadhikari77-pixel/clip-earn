@@ -28,7 +28,7 @@ import { Video } from "@/types";
 import { siteConfig, isOwnerEmail } from "@/config/site";
 import { useApp } from "@/context/AppContext";
 import { clientApi } from "@/lib/client-api";
-import { getLivePreviewInfo } from "@/lib/video-parser";
+import { getLivePreviewInfo, fetchVideoMetadata } from "@/lib/video-parser";
 import { EditVideoModal } from "./EditVideoModal";
 
 interface VideoCardProps {
@@ -47,11 +47,39 @@ export function VideoCard({
 }: VideoCardProps) {
   const { user, startEngagement, showToast } = useApp();
   const [imgError, setImgError] = useState(false);
+  const [currentThumb, setCurrentThumb] = useState<string>(video.thumbnailUrl || "");
   const [isHovered, setIsHovered] = useState(false);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const [showOwnerMenu, setShowOwnerMenu] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const hoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep thumbnail in sync with video prop updates
+  useEffect(() => {
+    setCurrentThumb(video.thumbnailUrl || "");
+    setImgError(false);
+  }, [video.thumbnailUrl]);
+
+  // Auto-upgrade legacy / random Unsplash placeholders to the authentic official video thumbnail
+  useEffect(() => {
+    const isRandomPlaceholder =
+      !video.thumbnailUrl ||
+      video.thumbnailUrl.includes("photo-1611162617213-7d7a39e9b1d7") ||
+      video.thumbnailUrl.includes("photo-1618005182384-a83a8bd57fbe") ||
+      video.thumbnailUrl.includes("photo-1611162616305");
+
+    if (isRandomPlaceholder && video.url) {
+      fetchVideoMetadata(video.url)
+        .then((meta) => {
+          if (meta.thumbnailUrl && !meta.thumbnailUrl.includes("unsplash")) {
+            setCurrentThumb(meta.thumbnailUrl);
+            setImgError(false);
+            clientApi.updateVideo(video.id, { thumbnailUrl: meta.thumbnailUrl }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+  }, [video.id, video.url, video.thumbnailUrl]);
 
   const isOwner = user?.role === "owner" || (user?.email && isOwnerEmail(user.email));
 
@@ -294,10 +322,10 @@ export function VideoCard({
     >
       {/* 9:16 VERTICAL SHORTS THUMBNAIL CONTAINER */}
       <div className="relative aspect-[9/16] w-full overflow-hidden bg-surface2">
-        {!imgError ? (
+        {currentThumb && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={video.thumbnailUrl}
+            src={currentThumb}
             alt={video.title}
             onError={() => setImgError(true)}
             className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"

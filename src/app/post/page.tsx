@@ -555,26 +555,46 @@ export default function UploadPage() {
                 </div>
               ) : (
                 <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={
-                      thumbnailUrl ||
-                      (detectedPlatform === "tiktok"
-                        ? "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80"
-                        : detectedPlatform === "instagram"
-                        ? "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80"
-                        : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80")
-                    }
-                    alt="Preview"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {/* OFFICIAL VIDEO THUMBNAIL OR LOADING COVER */}
+                  {loadingMeta ? (
+                    <div className="w-full h-full bg-surface2/90 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                      <Sparkles className="w-7 h-7 text-accent animate-spin" />
+                      <span className="text-[11px] font-extrabold text-fg tracking-wide">
+                        Fetching Official {detectedPlatform !== "other" ? detectedPlatform.toUpperCase() : "Video"} Thumbnail...
+                      </span>
+                      <span className="text-[9px] text-muted">Retrieving authentic cover directly from source CDN</span>
+                    </div>
+                  ) : thumbnailUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={thumbnailUrl}
+                      alt="Official Video Preview"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-surface2 via-black to-surface flex flex-col items-center justify-center p-4 text-center space-y-2">
+                      <VideoIcon className="w-8 h-8 text-accent/60 mb-1" />
+                      <span className="text-[11px] font-extrabold text-fg uppercase tracking-wider">
+                        Official {detectedPlatform !== "other" ? detectedPlatform.toUpperCase() : "Video"} Preview
+                      </span>
+                      <span className="text-[9px] text-muted max-w-[170px] leading-tight">
+                        Paste your clip URL above to automatically pull the official video thumbnail
+                      </span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/45 pointer-events-none" />
 
-                  {/* Top platform badge */}
-                  <div className="absolute top-2.5 left-2.5 z-10">
+                  {/* Top platform badge & Official badge */}
+                  <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-surface/90 text-fg border border-line backdrop-blur-md shadow-sm">
                       {detectedPlatform.toUpperCase()}
                     </span>
+                    {thumbnailUrl && !thumbnailUrl.includes("unsplash") && (
+                      <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 backdrop-blur-md flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5 text-emerald-400" />
+                        <span>Official Cover</span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Center Play Button Overlay */}
@@ -615,51 +635,30 @@ export default function UploadPage() {
             </div>
           </div>
 
-          {/* QUICK THUMBNAIL PRESETS */}
-          <div className="space-y-1.5 pt-1">
+          {/* OFFICIAL THUMBNAIL QUICK ACTIONS */}
+          <div className="space-y-2 pt-1">
             <span className="text-[10px] font-bold text-muted uppercase tracking-wider block text-center sm:text-left">
-              Quick Thumbnail Presets
+              Official Thumbnail Actions
             </span>
-            <div className="grid grid-cols-4 gap-1.5 text-[9px]">
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
               <button
                 type="button"
-                onClick={() =>
-                  setThumbnailUrl("https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80")
-                }
-                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
-                title="TikTok Viral Cover"
+                onClick={() => handleFetchMetadata(url)}
+                disabled={!url || loadingMeta}
+                className="px-3 py-2 rounded-xl bg-accent/15 hover:bg-accent/25 border border-accent/30 text-accent font-extrabold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                title="Fetch the official video cover directly from TikTok or YouTube"
               >
-                TikTok
+                <RefreshCw className={`w-3 h-3 ${loadingMeta ? "animate-spin" : ""}`} />
+                <span>Auto-Fetch Official</span>
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setThumbnailUrl("https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80")
-                }
-                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
-                title="Instagram Reel Cover"
+                onClick={() => setThumbnailUrl("")}
+                disabled={!thumbnailUrl}
+                className="px-3 py-2 rounded-xl bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center transition-colors disabled:opacity-50"
+                title="Clear current thumbnail to re-fetch"
               >
-                Reel
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setThumbnailUrl("https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80")
-                }
-                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
-                title="Gaming Neon Cover"
-              >
-                Gaming
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setThumbnailUrl("https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80")
-                }
-                className="px-2 py-1.5 rounded-lg bg-surface2 hover:bg-line border border-line text-muted hover:text-fg font-bold text-center truncate transition-colors"
-                title="Streamer Live Cover"
-              >
-                Streamer
+                Reset Thumbnail
               </button>
             </div>
           </div>

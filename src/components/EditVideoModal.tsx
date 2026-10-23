@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Pencil, Crown, Flame, Image, Tag, Tv } from "lucide-react";
+import { X, Pencil, Crown, Flame, Image, Tag, Tv, RefreshCw } from "lucide-react";
 import { Video, ClipCategory, PlatformType } from "@/types";
 import { useApp } from "@/context/AppContext";
 import { clientApi } from "@/lib/client-api";
+import { fetchVideoMetadata } from "@/lib/video-parser";
 
 interface EditVideoModalProps {
   video: Video | null;
@@ -24,6 +25,7 @@ export function EditVideoModal({ video, onClose, onSaved }: EditVideoModalProps)
   const [isOwnerVideo, setIsOwnerVideo] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetchingThumb, setFetchingThumb] = useState(false);
 
   useEffect(() => {
     if (video) {
@@ -38,6 +40,25 @@ export function EditVideoModal({ video, onClose, onSaved }: EditVideoModalProps)
   }, [video]);
 
   if (!video) return null;
+
+  const handleAutoFetchCover = async () => {
+    if (!video.url) return;
+    setFetchingThumb(true);
+    try {
+      const meta = await fetchVideoMetadata(video.url);
+      if (meta.thumbnailUrl) {
+        setThumbnailUrl(meta.thumbnailUrl);
+        showToast("Official cover retrieved from video source!", "success");
+      }
+      if (meta.title && (!title || title.startsWith("Trending TikTok Clip"))) {
+        setTitle(meta.title);
+      }
+    } catch {
+      showToast("Could not auto-fetch cover. Please check link.", "error");
+    } finally {
+      setFetchingThumb(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,15 +173,26 @@ export function EditVideoModal({ video, onClose, onSaved }: EditVideoModalProps)
 
             {/* Thumbnail URL */}
             <div className="space-y-1">
-              <label className="font-bold text-fg flex items-center gap-1.5">
-                <Image className="w-3.5 h-3.5 text-muted" />
-                <span>Thumbnail Image URL</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-fg flex items-center gap-1.5">
+                  <Image className="w-3.5 h-3.5 text-muted" />
+                  <span>Thumbnail Image URL</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAutoFetchCover}
+                  disabled={fetchingThumb}
+                  className="text-[10px] text-accent hover:underline flex items-center gap-1 font-bold disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${fetchingThumb ? "animate-spin" : ""}`} />
+                  <span>Auto-Fetch Official</span>
+                </button>
+              </div>
               <input
                 type="url"
                 value={thumbnailUrl}
                 onChange={(e) => setThumbnailUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
+                placeholder="Official CDN cover URL..."
                 className="w-full bg-surface2 border border-line rounded-xl px-3 py-2 text-xs text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
               />
             </div>
