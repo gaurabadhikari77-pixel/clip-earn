@@ -12,6 +12,7 @@ import { LoginModal } from "@/components/LoginModal";
 import { NicknameModal } from "@/components/NicknameModal";
 import { Toast } from "@/components/Toast";
 import { Footer } from "@/components/Footer";
+import { Analytics } from "@vercel/analytics/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -205,6 +206,9 @@ export default function RootLayout({
 
               {/* Interactive toast notifications */}
               <Toast />
+
+              {/* Free Real-Time Web Traffic & Source Analytics */}
+              <Analytics />
             </AppProvider>
           </ThemeProvider>
         </AuthProvider>
