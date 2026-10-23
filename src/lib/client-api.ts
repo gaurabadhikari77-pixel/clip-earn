@@ -521,4 +521,37 @@ export const clientApi = {
   ) {
     return db.updateUserProfile(userId, data);
   },
+
+  async transferCredits(targetUserId: string, amount: number) {
+    const user = db.getUserById(targetUserId);
+    if (!user) {
+      throw new Error(`User not found with ID: ${targetUserId}`);
+    }
+    const newBalance = db.addCredits(targetUserId, amount);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("clipearn_credits_transferred", {
+          detail: { userId: targetUserId, amount, newBalance },
+        })
+      );
+    }
+    return { user, newBalance };
+  },
+
+  async searchUsers(query: string) {
+    const users = db.getUsers();
+    if (!query || !query.trim()) return users;
+    const q = query.trim().toLowerCase();
+    return users.filter(
+      (u) =>
+        u.id.toLowerCase().includes(q) ||
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.nickname && u.nickname.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q))
+    );
+  },
+
+  async getAllUsers() {
+    return db.getUsers();
+  },
 };

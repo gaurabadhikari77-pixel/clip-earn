@@ -21,9 +21,10 @@ import {
   LogIn,
   Pin,
 } from "lucide-react";
-import { siteConfig } from "@/config/site";
+import { siteConfig, isOwnerEmail } from "@/config/site";
 import { useApp } from "@/context/AppContext";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { OwnerCreditTransferModal } from "@/components/OwnerCreditTransferModal";
 
 interface TopBarProps {
   onSearchChange?: (val: string) => void;
@@ -41,8 +42,11 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
     switchUserPersona,
   } = useApp();
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [isOwnerTransferOpen, setIsOwnerTransferOpen] = useState(false);
   const [countdownString, setCountdownString] = useState("");
   const [localSearch, setLocalSearch] = useState(searchValue);
+
+  const isOwner = (user && isOwnerEmail(user.email)) || user?.role === "owner";
 
   // Live countdown to 6:00 AM reset
   useEffect(() => {
@@ -74,7 +78,6 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
     }
   };
 
-  const isOwner = user?.role === "owner";
   const credits = isOwner ? "∞" : (user?.credits ?? user?.postCredits ?? 0);
 
   return (
@@ -168,6 +171,20 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
               </span>
             </motion.div>
 
+            {/* OWNER EXCLUSIVE: QUICK ID SEARCH & FREE CREDIT TRANSFER */}
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setIsOwnerTransferOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-yellow-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-yellow-500/25 text-amber-400 border border-amber-500/40 text-xs font-bold transition-all shadow-sm active:scale-95"
+                title="Owner Tools: Search User IDs & Transfer Free Credits"
+              >
+                <Crown className="w-3.5 h-3.5 text-warning fill-warning" />
+                <span className="hidden md:inline">Transfer Credits / Search IDs</span>
+                <span className="md:hidden">Transfer</span>
+              </button>
+            )}
+
             {/* AVATAR MENU & PERSONA SWITCHER */}
             <div className="relative">
               <button
@@ -235,6 +252,19 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
                     </div>
 
                     <div className="space-y-1">
+                      {/* OWNER ID TOOLS: SEARCH IDS & TRANSFER FREE CREDITS */}
+                      {isOwner && (
+                        <button
+                          onClick={() => {
+                            setRoleMenuOpen(false);
+                            setIsOwnerTransferOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-warning/15 text-amber-400 font-bold transition-colors text-left"
+                        >
+                          <Coins className="w-3.5 h-3.5 text-warning" /> Search IDs & Send Credits
+                        </button>
+                      )}
+
                       <Link
                         href="/profile"
                         onClick={() => setRoleMenuOpen(false)}
@@ -275,6 +305,14 @@ export function TopBar({ onSearchChange, searchValue = "" }: TopBarProps) {
           </button>
         )}
       </div>
+
+      {/* OWNER ONLY: SEARCH IDS & TRANSFER FREE CREDITS MODAL */}
+      {isOwner && (
+        <OwnerCreditTransferModal
+          isOpen={isOwnerTransferOpen}
+          onClose={() => setIsOwnerTransferOpen(false)}
+        />
+      )}
     </header>
   );
 }

@@ -22,12 +22,16 @@ import {
   Flame,
   Search,
   Flag,
+  Coins,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Video, User, Report, SiteSettings, UserRole } from "@/types";
 import { clientApi } from "@/lib/client-api";
 import { db } from "@/lib/store";
 import { isOwnerEmail } from "@/config/site";
+import { OwnerCreditTransferModal } from "@/components/OwnerCreditTransferModal";
 
 export default function AdminPage() {
   const { user, showToast, refreshSettings } = useApp();
@@ -71,6 +75,9 @@ export default function AdminPage() {
   // Filter / Search in users & videos
   const [userSearch, setUserSearch] = useState("");
   const [videoSearch, setVideoSearch] = useState("");
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferTargetUserId, setTransferTargetUserId] = useState<string | undefined>(undefined);
+  const [copiedUserId, setCopiedUserId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -527,18 +534,32 @@ export default function AdminPage() {
         {/* TAB 4: USERS & CUSTOM DAILY LIMITS */}
         {activeTab === "users" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="relative w-full max-w-sm">
                 <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  placeholder="Search user by email or name..."
+                  placeholder="Search user by ID, nickname, name, or email..."
                   className="w-full pl-9 pr-3 py-2 rounded-xl bg-surface2 border border-line text-xs text-fg placeholder:text-muted focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
-              <span className="text-xs text-muted">{usersList.length} Registered Users</span>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTransferTargetUserId(undefined);
+                    setIsTransferModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-black font-black text-xs uppercase tracking-wider shadow-md hover:opacity-95 transition-all active:scale-95 shrink-0"
+                >
+                  <Coins className="w-4 h-4 text-black" />
+                  <span>Transfer Free Credits</span>
+                </button>
+                <span className="text-xs text-muted font-medium">{usersList.length} Registered Users</span>
+              </div>
             </div>
 
             <div className="rounded-2xl border border-line overflow-hidden bg-surface shadow-xl">
@@ -546,7 +567,7 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-surface2 text-muted font-semibold border-b border-line">
                     <tr>
-                      <th className="p-3">User</th>
+                      <th className="p-3">User & ID</th>
                       <th className="p-3">Role</th>
                       <th className="p-3">Credits</th>
                       <th className="p-3">Today Posts</th>
@@ -560,22 +581,51 @@ export default function AdminPage() {
                       .filter(
                         (u) =>
                           !userSearch ||
-                          u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-                          u.name.toLowerCase().includes(userSearch.toLowerCase())
+                          u.id.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          (u.name && u.name.toLowerCase().includes(userSearch.toLowerCase())) ||
+                          (u.nickname && u.nickname.toLowerCase().includes(userSearch.toLowerCase())) ||
+                          (u.email && u.email.toLowerCase().includes(userSearch.toLowerCase()))
                       )
                       .map((u) => (
                         <tr key={u.id} className="hover:bg-surface2/50 transition-colors">
                           <td className="p-3">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2.5">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={u.avatar}
                                 alt={u.name}
-                                className="w-6 h-6 rounded-full object-cover"
+                                className="w-8 h-8 rounded-full object-cover shrink-0 border border-line"
                               />
                               <div>
-                                <p className="font-bold text-fg">{u.name}</p>
+                                <p className="font-bold text-fg flex items-center gap-1">
+                                  <span>{u.nickname || u.name}</span>
+                                  {u.nickname && u.name && (
+                                    <span className="text-[10px] text-muted font-normal">
+                                      ({u.name})
+                                    </span>
+                                  )}
+                                </p>
                                 <p className="text-[10px] text-muted">{u.email}</p>
+                                <div className="flex items-center gap-1 text-[10px] text-muted font-mono pt-0.5">
+                                  <span className="truncate max-w-[130px]">ID: {u.id}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(u.id);
+                                      setCopiedUserId(u.id);
+                                      showToast("User ID copied!", "success");
+                                      setTimeout(() => setCopiedUserId(null), 2000);
+                                    }}
+                                    className="text-accent hover:underline flex items-center gap-0.5 ml-0.5"
+                                    title="Copy full User ID"
+                                  >
+                                    {copiedUserId === u.id ? (
+                                      <Check className="w-2.5 h-2.5 text-success" />
+                                    ) : (
+                                      <Copy className="w-2.5 h-2.5" />
+                                    )}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -641,16 +691,30 @@ export default function AdminPage() {
                             )}
                           </td>
                           <td className="p-3 text-right">
-                            <button
-                              onClick={() => handleUpdateUser(u.id, { isBanned: !u.isBanned })}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                                u.isBanned
-                                  ? "bg-success/15 text-success hover:bg-success/25 border border-success/30"
-                                  : "bg-danger/15 text-danger hover:bg-danger/25 border border-danger/30"
-                              }`}
-                            >
-                              {u.isBanned ? "Unban" : "Ban"}
-                            </button>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTransferTargetUserId(u.id);
+                                  setIsTransferModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-colors flex items-center gap-1"
+                                title="Transfer Free Credits to this clipper"
+                              >
+                                <Coins className="w-3 h-3 text-warning" />
+                                <span>Send Credits</span>
+                              </button>
+                              <button
+                                onClick={() => handleUpdateUser(u.id, { isBanned: !u.isBanned })}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                                  u.isBanned
+                                    ? "bg-success/15 text-success hover:bg-success/25 border border-success/30"
+                                    : "bg-danger/15 text-danger hover:bg-danger/25 border border-danger/30"
+                                }`}
+                              >
+                                {u.isBanned ? "Unban" : "Ban"}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1033,6 +1097,16 @@ export default function AdminPage() {
           </form>
         )}
       </div>
+
+      {/* OWNER FREE CREDIT TRANSFER & USER ID SEARCH MODAL */}
+      <OwnerCreditTransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => {
+          setIsTransferModalOpen(false);
+          loadData();
+        }}
+        initialUserId={transferTargetUserId}
+      />
     </div>
   );
 }
