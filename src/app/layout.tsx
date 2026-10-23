@@ -96,6 +96,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://gaurabadhikari77-pixel.github.io/clip-earn/",
   },
+  verification: {
+    google: "google334e75703f22a978",
+  },
 };
 
 const jsonLd = {
